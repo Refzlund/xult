@@ -1,0 +1,22 @@
+{
+	"$schema": "node_modules/oxlint/configuration_schema.json",
+	"plugins": ["eslint", "unicorn", "typescript", "oxc"],
+	"ignorePatterns": ["**/node_modules/**"],
+	"rules": {
+		"eslint/indent": ["error", "tab"],
+		"quotes": ["error", "single"],
+		"semi": ["error", "never"],
+		"no-var": "error",
+		"prefer-const": "warn",
+		"no-unused-vars": "warn",
+		"no-mixed-spaces-and-tabs": ["error", "smart-tabs"]
+	},
+	"overrides": [
+		{
+			"files": ["**/*.test.ts"],
+			"rules": {
+				"eslint/no-unused-vars": "off"
+			}
+		}
+	]
+}

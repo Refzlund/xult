@@ -1,6 +1,6 @@
 {
 	"name": "xult",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/Refzlund/xult.git"
@@ -9,5 +9,36 @@
 	"bugs": {
 		"url": "https://github.com/Refzlund/xult/issues"
 	},
-	"type": "module"
+	"scripts": {
+		"test": "bun test --coverage",
+		"lint": "bunx oxlint --type-aware --fix",
+		"typecheck": "tsgo --noEmit --project ./tsconfig.json",
+		"package": "rolldown --config ./rolldown.config.ts",
+		"publish": "bun run package && changeset publish"
+	},
+	"dependencies": {
+		"@standard-schema/spec": "^1"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.29.7",
+		"@refzlund/repo": "github:refzlund/repo#next",
+		"@svitejs/changesets-changelog-github-compact": "^1.2.0",
+		"@types/bun": "^1",
+		"@typescript/native-preview": "^7.0.0-dev.20251101.1",
+		"oxlint": "^1.25.0",
+		"oxlint-tsgolint": "^0.4.0",
+		"rolldown": "^1.0.0-beta.45",
+		"rolldown-plugin-dts": "^0.17.3",
+		"zod": "^4"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist"
+	]
 }
