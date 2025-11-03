@@ -1,0 +1,13 @@
+{
+	"name": "xult",
+	"version": "0.0.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Refzlund/xult.git"
+	},
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/Refzlund/xult/issues"
+	},
+	"type": "module"
+}
