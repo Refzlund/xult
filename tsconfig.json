@@ -1,0 +1,13 @@
+{
+	"extends": "@refzlund/repo/tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["@types/bun"],
+		"module": "esnext",
+		"target": "esnext",
+		"moduleResolution": "bundler",
+		"paths": {
+			"xult": ["./src/index.ts"]
+		}
+	},
+	"exclude": ["**/node_modules/**", "dist"]
+}
