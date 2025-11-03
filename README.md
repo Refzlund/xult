@@ -69,7 +69,8 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> [!TIP] Type-narrowing errors  
+> [!TIP] Type-narrowing errors
+>
 > When we handle errors, narrowing becomes crucial to providing the best UX/DX feedback:
 > 
 > ```ts
@@ -83,7 +84,8 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> [!TIP] The Power of Generators  
+> [!TIP] The Power of Generators
+>
 > Say goodbye to nested `if` statements and embrace clean, linear logic. `xult` brings the power of do-notation to TypeScript through generator functions.
 >
 > ```ts
@@ -298,7 +300,8 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 }
 ```
 
-> [!NOTE] Standard Schema  
+> [!NOTE] Standard Schema
+>
 > [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema) is a shared interface designed by the authors of Zod, Valibot, and ArkType. Any schema library that implements it can plug into `xult.func` with zero adapters.
 
 <br>
