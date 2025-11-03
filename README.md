@@ -2,13 +2,15 @@
 <div align='center'>
     <img src='./XULT.png' width=500 alt='XULT logo' />
     <br>
-    <a href='https://www.npmjs.com/package/xult'><img src='https://img.shields.io/npm/v/xult.svg' /></a>
-    <a href='https://github.com/your-repo/xult/actions/workflows/ci.yml'><img src='https://github.com/refzlund/xult/actions/workflows/ci.yml/badge.svg' /></a>
+    <a href='https://www.npmjs.com/package/xult'><img src='https://img.shields.io/npm/v/xult?logo=npm&logoColor=white&label=%20&labelColor=red' /></a>   
+    <a href='https://github.com/your-repo/xult/actions/workflows/commit.yml'><img src='https://img.shields.io/github/actions/workflow/status/Refzlund/xult/commit.yml?logo=github&label=Testing%20and%20Typechecking&branch=release' /></a>
 </div>
 
+<div align='center'>
+<i>To be reliable,  you need to fail deliberately,  and handle it intentionally.</i>
+</div>
 
-$${\color{lightblue}To \space be \space reliable, \newline you \space need \space to \space fail \space deliberately, \newline and \space handle \space it \space intentionally. }$$
-
+<br>
 
 You do that with a **robust**, **type-safe**, and expressive Result-type for TypeScript, inspired by Rust's `Result` enum. `xult` provides a simple and powerful way to handle operations that can either succeed (`Ok`) or fail (`Err`), without resorting to throwing exceptions.
 
@@ -67,7 +69,7 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> [!TIP] Type-narrowing errors
+> [!TIP] Type-narrowing errors  
 > When we handle errors, narrowing becomes crucial to providing the best UX/DX feedback:
 > 
 > ```ts
@@ -81,7 +83,7 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> [!TIP] The Power of Generators
+> [!TIP] The Power of Generators  
 > Say goodbye to nested `if` statements and embrace clean, linear logic. `xult` brings the power of do-notation to TypeScript through generator functions.
 >
 > ```ts
@@ -296,7 +298,7 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 }
 ```
 
-> [!NOTE] Standard Schema
+> [!NOTE] Standard Schema  
 > [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema) is a shared interface designed by the authors of Zod, Valibot, and ArkType. Any schema library that implements it can plug into `xult.func` with zero adapters.
 
 <br>
