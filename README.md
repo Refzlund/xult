@@ -3,7 +3,7 @@
     <img src='./XULT.png' width=500 alt='XULT logo' />
     <br>
     <a href='https://www.npmjs.com/package/xult'><img src='https://img.shields.io/npm/v/xult?logo=npm&logoColor=white&label=%20&labelColor=red' /></a>   
-    <a href='https://github.com/your-repo/xult/actions/workflows/commit.yml'><img src='https://img.shields.io/github/actions/workflow/status/Refzlund/xult/commit.yml?logo=github&label=Testing%20and%20Typechecking&branch=release' /></a>
+    <a href='https://github.com/refzlund/xult/actions/workflows/commit.yml'><img src='https://img.shields.io/github/actions/workflow/status/Refzlund/xult/commit.yml?logo=github&label=Testing%20and%20Typechecking&branch=release' /></a>
 </div>
 
 <div align='center'>
