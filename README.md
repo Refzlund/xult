@@ -82,9 +82,6 @@ Please see how in [Quickstart](#quickstart)!
 > }
 > ```
 
-https://img.shields.io/static/v1?label=Text&labelColor=green&color=hsla(0%2C0%2C0%2C0)
-https://img.shields.io/static/v1?label=&message=Ааи&color=green
-
 <br>
 
 > <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=The%C2%A0Power%C2%A0of%C2%A0Generators'>
