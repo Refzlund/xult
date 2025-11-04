@@ -114,24 +114,6 @@ Please see how in [Quickstart](#quickstart)!
 > //    ^? Result<string, { code: 'ZERO' }>
 > ```
 > When you `yield*` a `Result`, `xult` handles the boilerplate: it unwraps the success value or short-circuits the execution with the error. This makes complex, multi-step operations a joy to write.
->
-> You can even combine it with validation:
->
-> ```ts
-> import { s } from '@standard-schema/spec'
->
-> const validatedProcess = func(s.number(), function*(num) {
->     const isNumEven = yield* isEven(num)
->     //    ^? boolean
->
->     if (isNumEven) {
->         return `The number ${num} is even.`
->     }
->
->     return `The number ${num} is odd.`
-> })
-> //    ^? Result<string, { code: 'ZERO' } | Result.ValidationError>
-> ```
 
 
 <br>
