@@ -69,7 +69,7 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=Type-narrowing Errors'>
+> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=Type-narrowing%C2%A0Errors'>
 >
 > When we handle errors, narrowing becomes crucial to providing the best UX/DX feedback:
 > 
@@ -87,7 +87,7 @@ https://img.shields.io/static/v1?label=&message=Ааи&color=green
 
 <br>
 
-> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=The Power of Generators'>
+> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=The%C2%A0Power%C2%A0of%C2%A0Generators'>
 >
 > Say goodbye to nested `if` statements and embrace clean, linear logic. `xult` brings the power of do-notation to TypeScript through generator functions.
 >
@@ -303,7 +303,7 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 }
 ```
 
-> <img src='./info.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=0657bd&&message=Standard Schema'>
+> <img src='./info.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=0657bd&&message=Standard%20Schema'>
 >
 > **[`@standard-schema/spec`](https://github.com/standard-schema/standard-schema)** is a shared interface designed by the authors of Zod, Valibot, and ArkType. Any schema library that implements it can plug into `xult.func` with zero adapters.
 
