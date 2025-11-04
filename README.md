@@ -301,7 +301,6 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 ```
 
 > [!NOTE] Standard Schema
->
 > [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema) is a shared interface designed by the authors of Zod, Valibot, and ArkType. Any schema library that implements it can plug into `xult.func` with zero adapters.
 
 <br>
