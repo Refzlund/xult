@@ -7,7 +7,7 @@
 </div>
 
 <div align='center'>
-<i>To be reliable,  you need to fail deliberately,  and handle it intentionally.</i>
+<small><i>To be reliable,  you need to fail deliberately,  and handle it intentionally.</i></small>
 </div>
 
 <br>
@@ -69,7 +69,7 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=Type-narrowing Errors'>
+> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/badge?%C2%A0&label=&color=darkgreen&&message=Type-narrowing Errors'>
 >
 > When we handle errors, narrowing becomes crucial to providing the best UX/DX feedback:
 > 
@@ -82,12 +82,10 @@ Please see how in [Quickstart](#quickstart)!
 > }
 > ```
 
-https://img.shields.io/static/v1?label=Text&labelColor=green&color=hsla(0%2C0%2C0%2C0)
-https://img.shields.io/static/v1?label=&message=Ааи&color=green
 
 <br>
 
-> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=The Power of Generators'>
+> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/badge?%C2%A0&label=&color=darkgreen&&message=The Power of Generators'>
 >
 > Say goodbye to nested `if` statements and embrace clean, linear logic. `xult` brings the power of do-notation to TypeScript through generator functions.
 >
@@ -303,7 +301,7 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 }
 ```
 
-> <img src='./info.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=0657bd&&message=Standard Schema'>
+> <img src='./info.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/badge?%C2%A0&label=&color=0657bd&&message=Standard Schema'>
 >
 > **[`@standard-schema/spec`](https://github.com/standard-schema/standard-schema)** is a shared interface designed by the authors of Zod, Valibot, and ArkType. Any schema library that implements it can plug into `xult.func` with zero adapters.
 
