@@ -1,4 +1,5 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
+import { inspect } from 'util'
 
 type InferInputs<T extends readonly StandardSchemaV1[]> = {
 	-readonly [K in keyof T]: StandardSchemaV1.InferInput<T[K] extends StandardSchemaV1 ? T[K] : never>
@@ -30,6 +31,94 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	message?: TError['message']
 	details?: TError['details']
 	stack?: string
+
+	log() {
+		console.log(this.#log())
+	}
+
+	#log(depth: number = 4) {
+		const OK = this instanceof Ok
+		const value = OK ? this.value : this.details
+		const type = typeof value
+
+		let result = ''
+
+		if(OK) {
+			result = '' 
+				+ `\x1b[32;1m​🇷​​🇪​​🇸​​🇺​​🇱​​🇹​ 🇴​🇰​\x1b[31;0m  `
+				+ `\x1b[37;2m<${type}>\x1b[37;0m`
+		}
+		else {
+			result = ''
+				+ `\x1b[31;1m​🇷​​🇪​​🇸​​🇺​​🇱​​🇹​ ​🇪​​🇷​​🇷​​​\x1b[37;0m`
+				+ `  \x1b[31;3m${this.code}\x1b[37;0m`
+				+ `  ${this.message}`
+		}
+
+		let spacing = 0
+		let valueResult: undefined | string
+		if(type === 'string') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'number') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'boolean') {
+			spacing = 3
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'symbol') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'bigint') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(value === null) {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'function') {
+			spacing = 2
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'object') {
+			const inspected = inspect(value, { colors: true, depth, maxArrayLength: 10 })
+			if(value.constructor.name !== 'Object') {
+				spacing = 4
+				valueResult = `${inspected}`
+			}
+			else {
+				valueResult = ` ${inspected}`
+			}
+		}
+
+		if(OK && valueResult !== undefined) {
+			result += Array(spacing).fill(' ').join('') + valueResult
+		}
+
+		if(!OK && valueResult !== undefined) {
+			result += `\n    \x1b[30;2mdetails  \x1b[37;2m<${typeof this.details}>\x1b[37;0m`
+			result += Array(Math.max(spacing - 2, 1)).fill(' ').join('') + valueResult.replaceAll('\n', '\n    ')
+			console.log('')
+		}
+
+		return result
+	}
+
+	[Symbol.toStringTag]() {
+		if (this instanceof Ok) {
+			return `Result.Ok<${typeof this.value}>`
+		} else {
+			return `Result.Err[${this.code}]` + this.details !== undefined ? `<${typeof this.details}>` : ''
+		}
+	}
+	[Symbol.for('nodejs.util.inspect.custom')](depth: number = 4) {
+		return this.#log(depth)
+	}
 
 	static async<
 		T,
