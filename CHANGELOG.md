@@ -1,5 +1,15 @@
 # xult
 
+## 1.1.0
+
+### Minor Changes
+
+- feat: pretty print Result in the terminal and browser console ([#5](https://github.com/Refzlund/xult/pull/5))
+
+### Patch Changes
+
+- chore: README.md formatting ([#3](https://github.com/Refzlund/xult/pull/3))
+
 ## 1.0.0
 
 ### Major Changes
