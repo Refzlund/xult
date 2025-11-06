@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test'
+import { describe, test } from 'bun:test'
 import { ok, err } from 'xult'
 
 const large_obj = {
