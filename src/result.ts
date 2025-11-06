@@ -1,4 +1,7 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
+import { inspect } from 'util'
+
+
 
 type InferInputs<T extends readonly StandardSchemaV1[]> = {
 	-readonly [K in keyof T]: StandardSchemaV1.InferInput<T[K] extends StandardSchemaV1 ? T[K] : never>
@@ -30,6 +33,98 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	message?: TError['message']
 	details?: TError['details']
 	stack?: string
+
+	log() { console.log(this) }
+
+	#log(depth: number = 4) {
+		const OK = this instanceof Ok
+		const value = OK ? this.value : this.details
+		const type = typeof value
+
+		let result = ''
+
+		if(OK) {
+			result = '' 
+				+ `\x1b[32;1m​🇷​​🇪​​🇸​​🇺​​🇱​​🇹​ 🇴​🇰​\x1b[31;0m  `
+				+ `\x1b[37;2m<${type}>\x1b[37;0m`
+		}
+		else {
+			result = ''
+				+ `\x1b[31;1m​🇷​​🇪​​🇸​​🇺​​🇱​​🇹​ ​🇪​​🇷​​🇷​​​\x1b[37;0m`
+				+ `  \x1b[31;3m${this.code}\x1b[37;0m`
+				+ `  ${this.message}`
+		}
+
+		let spacing = 0
+		let valueResult: undefined | string
+		if(type === 'string') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'number') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'boolean') {
+			spacing = 3
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'symbol') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'bigint') {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(value === null) {
+			spacing = 4
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'function') {
+			spacing = 2
+			valueResult = inspect(value, { colors: true, depth })
+		}
+		else if(type === 'object') {
+			const inspected = inspect(value, {
+				colors: true,
+				depth,
+				maxArrayLength: 10,
+				compact: 1,
+				numericSeparator: true
+			})
+			if(value.constructor.name !== 'Object') {
+				spacing = 4
+				valueResult = `${inspected}`
+			}
+			else {
+				valueResult = ` ${inspected}`
+			}
+		}
+
+		if(OK && valueResult !== undefined) {
+			result += Array(spacing).fill(' ').join('') + valueResult
+		}
+
+		if(!OK && valueResult !== undefined) {
+			result += `\n    \x1b[30;2mdetails  \x1b[37;2m<${typeof this.details}>\x1b[37;0m`
+			result += Array(Math.max(spacing - 2, 1)).fill(' ').join('') + valueResult.replaceAll('\n', '\n    ')
+			result += '\n'
+		}
+
+		return result
+	}
+
+	[Symbol.toStringTag]() {
+		if (this instanceof Ok) {
+			return `Result.Ok<${typeof this.value}>`
+		} else {
+			return `Result.Err[${this.code}]` + (this.details !== undefined ? `<${typeof this.details}>` : '')
+		}
+	}
+	[Symbol.for('nodejs.util.inspect.custom')](depth: number = 4) {
+		return this.#log(depth)
+	}
 
 	static async<
 		T,
@@ -592,6 +687,134 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		err.stack = res.stack
 		return Result.ok(err) as any
 	}
+}
+
+if(typeof window !== 'undefined') {
+	const getTypeLabel = (value: unknown) => {
+		if(value === null) return 'null'
+		if(Array.isArray(value)) return `Array(${value.length})`
+		if(value instanceof Map) return `Map(${value.size})`
+		if(value instanceof Set) return `Set(${value.size})`
+		if(value instanceof Date) return 'Date'
+		return typeof value
+	}
+
+	const sanitizeString = (value: string) => (
+		value
+			.replace(/\\/g, '\\\\')
+			.replace(/\r/g, '\\r')
+			.replace(/\n/g, '\\n')
+			.replace(/\t/g, '\\t')
+			.replace(/'/g, "\\'")
+	)
+
+	const quoteString = (value: string) => `'${sanitizeString(value)}'`
+
+	const formatInlineValue = (value: unknown): any | null => {
+		if(value === undefined) return null
+		if(value instanceof Result) {
+			return ['span', { style: 'color: #9ca3af; font-style: italic; white-space: pre;' }, '[Result]']
+		}
+		if(value === null) {
+			return ['span', { style: 'color: #f9fafb; font-weight: 700; white-space: pre;' }, 'null']
+		}
+		if(typeof value === 'string') {
+			return ['span', { style: 'color: #22c55e; white-space: pre;' }, quoteString(value)]
+		}
+		if(typeof value === 'number' || typeof value === 'boolean') {
+			return ['span', { style: 'color: #facc15; white-space: pre;' }, String(value)]
+		}
+		if(typeof value === 'bigint') {
+			return ['span', { style: 'color: #facc15; white-space: pre;' }, `${value}n`]
+		}
+		if(typeof value === 'symbol') {
+			return ['span', { style: 'color: #22c55e; white-space: pre;' }, String(value)]
+		}
+		if(typeof value === 'function') {
+			const name = value.name ? `: ${value.name}` : ''
+			return ['span', { style: 'color: #06b6d4; white-space: pre;' }, `[Function${name}]`]
+		}
+		if(value instanceof Date) {
+			return ['span', { style: 'color: #22c55e; white-space: pre;' }, value.toISOString()]
+		}
+		if(Array.isArray(value) || value instanceof Map || value instanceof Set || (value && typeof value === 'object')) {
+			return ['object', { object: value }]
+		}
+		return null
+	}
+
+	const appendStyle = (current: string | undefined, addition: string) => current ? `${current} ${addition}` : addition
+
+	const globalWindow = window as any
+	globalWindow.devtoolsFormatters = globalWindow.devtoolsFormatters || []
+	const formatterFlag = Symbol.for('xult.result.devtoolsFormatter')
+	const formatter = {
+		header(obj: unknown) {
+			if(!(obj instanceof Result)) return null
+			const isOk = obj instanceof Ok
+			const typeLabel = isOk ? getTypeLabel(obj.value) : getTypeLabel(obj.details)
+			if(isOk) {
+				const parts: any[] = [
+					['span', { style: 'color: #22c55e; font-weight: 700;' }, '​🇷​​🇪​​🇸​​🇺​​🇱​​🇹​ 🇴​🇰​​'],
+					['span', { style: 'color: #9ca3af; font-style: italic; margin-left: 8px; margin-right: 12px;' }, `<${typeLabel}>`]
+				]
+				const inlineValue = formatInlineValue(obj.value)
+				if(inlineValue) {
+					if(inlineValue[0] !== 'object') {
+						const props = inlineValue[1] ?? {}
+						inlineValue[1] = props
+						props.style = appendStyle(props.style, 'margin-left: 0;')
+					}
+					parts.push(inlineValue)
+				}
+				return ['div', { style: 'display: flex; align-items: baseline; gap: 0;' }, ...parts]
+			}
+
+			const err = obj as Err
+			const headerParts: any[] = [
+				['span', { style: 'color: #ef4444; font-weight: 800;' }, '​🇷​​🇪​​🇸​​🇺​​🇱​​🇹​ ​🇪​​🇷​​🇷​​​']
+			]
+			if(err.code) {
+				headerParts.push(['span', { style: 'color: #fca5a5; font-weight: 600; margin-left: 16px;' }, err.code])
+			}
+			if(err.message) {
+				headerParts.push(['span', { style: 'color: #e5e7eb; margin-left: 16px;' }, err.message])
+			}
+            if(typeLabel !== 'undefined') {
+                headerParts.push(['div'])
+                headerParts.push(['span', { style: 'color: #9ca3af; opacity: .5; font-style: italic; margin-left: 30px;' }, `details`])
+			    headerParts.push(['span', { style: 'color: #9ca3af; font-style: italic; margin-left: 12px; margin-right: 12px;' }, `<${typeLabel}>`])
+            }
+			const inlineDetails = formatInlineValue(err.details)
+			if(inlineDetails) {
+				if(inlineDetails[0] !== 'object') {
+					const props = inlineDetails[1] ?? {}
+					inlineDetails[1] = props
+					props.style = appendStyle(props.style, 'margin-left: 0;')
+				}
+				headerParts.push(inlineDetails)
+			}
+			return ['div', {}, ...headerParts]
+		},
+		hasBody(obj: unknown) {
+			return obj instanceof Err && typeof obj.stack === 'string' && obj.stack.length > 0
+		},
+		body(obj: unknown) {
+			if(!(obj instanceof Err) || !obj.stack) return null
+			return ['div', { style: 'color: #6b7280; white-space: pre-wrap; font-family: monospace; font-size: 12px;' }, obj.stack]
+		}
+	}
+
+	const devtools = globalWindow.devtoolsFormatters
+	const existingFormatter = globalWindow[formatterFlag]
+	if(existingFormatter) {
+		const index = devtools.indexOf(existingFormatter)
+		if(index !== -1) devtools.splice(index, 1, formatter)
+		else devtools.push(formatter)
+	} else {
+		devtools.push(formatter)
+	}
+	globalWindow[formatterFlag] = formatter
 }
 
 class Ok<

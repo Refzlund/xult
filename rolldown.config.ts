@@ -1,9 +1,13 @@
 import { defineConfig } from 'rolldown'
 import { dts } from 'rolldown-plugin-dts'
+import nodePolyfills from '@rolldown/plugin-node-polyfills'
 
 export default defineConfig({
 	input: './src/index.ts',
-	plugins: [dts({ tsgo: true })],	
+	plugins: [
+		nodePolyfills(),
+		dts({ tsgo: true })
+	],	
 	output: [{
 		dir: 'dist',
 		format: 'esm',
