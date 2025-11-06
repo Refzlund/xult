@@ -119,7 +119,7 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		if (this instanceof Ok) {
 			return `Result.Ok<${typeof this.value}>`
 		} else {
-			return `Result.Err[${this.code}]` + this.details !== undefined ? `<${typeof this.details}>` : ''
+			return `Result.Err[${this.code}]` + (this.details !== undefined ? `<${typeof this.details}>` : '')
 		}
 	}
 	[Symbol.for('nodejs.util.inspect.custom')](depth: number = 4) {
