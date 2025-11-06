@@ -1,6 +1,6 @@
 
 <div align='center'>
-    <img src='./XULT.png' width=500 alt='XULT logo' />
+    <img src='./.github/XULT.png' width=500 alt='XULT logo' />
     <br>
     <a href='https://www.npmjs.com/package/xult'><img src='https://img.shields.io/npm/v/xult?logo=npm&logoColor=white&label=%20&labelColor=red' /></a>   
     <a href='https://github.com/refzlund/xult/actions/workflows/commit.yml'><img src='https://img.shields.io/github/actions/workflow/status/Refzlund/xult/commit.yml?logo=github&label=Testing%20and%20Typechecking&branch=release' /></a>
@@ -32,6 +32,7 @@ This makes error handling explicit, predictable, and type-safe.
 - 👍  **Validation**  —  Built-in support for input validation using any library that implements the [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema).
 - ❤️  **Expressive API**  —  A clean and intuitive API that is a joy to use.
 - 🌤️  **Lightweight**  —  `xult` is a tiny library with zero runtime dependencies.
+- ✨  **Pretty Print**  —  Beautifully outputs [`console.log`s](./LOG.md)
 
 <br>
 
@@ -69,7 +70,7 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=Type-narrowing%C2%A0Errors'>
+> <img src='./.github/tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=Type-narrowing%C2%A0Errors'>
 >
 > When we handle errors, narrowing becomes crucial to providing the best UX/DX feedback:
 > 
@@ -84,7 +85,7 @@ Please see how in [Quickstart](#quickstart)!
 
 <br>
 
-> <img src='./tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=The%C2%A0Power%C2%A0of%C2%A0Generators'>
+> <img src='./.github/tip.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=darkgreen&&message=The%C2%A0Power%C2%A0of%C2%A0Generators'>
 >
 > Say goodbye to nested `if` statements and embrace clean, linear logic. `xult` brings the power of do-notation to TypeScript through generator functions.
 >
@@ -120,7 +121,7 @@ Please see how in [Quickstart](#quickstart)!
 
 ## Basic Usage
 
-Depending on your <img src='./personality.gif' alt='personality' height=25 align='middle'>, you can import <code>xult</code> by:
+Depending on your <img src='./.github/personality.gif' alt='personality' height=25 align='middle'>, you can import <code>xult</code> by:
 
 ```ts
 import Result from 'xult'
@@ -282,7 +283,7 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 }
 ```
 
-> <img src='./info.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=0657bd&&message=Standard%20Schema'>
+> <img src='./.github/info.png' width=24 align='center'>  <img align='center' src='https://img.shields.io/static/v1?%C2%A0&label=&color=0657bd&&message=Standard%20Schema'>
 >
 > **[`@standard-schema/spec`](https://github.com/standard-schema/standard-schema)** is a shared interface designed by the authors of Zod, Valibot, and ArkType. Any schema library that implements it can plug into `xult.func` with zero adapters.
 

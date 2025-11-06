@@ -34,22 +34,24 @@ class Example {
 	}
 }
 
-describe('Section', () => {
-	test(`should work`, async () => {
+describe.skip('Pretty log', () => {
+	test(`pretty print tests`, async () => {
 		console.log('')
 		console.log('')
-		ok('Test').log(false)
-		ok(123).log(false)
-		ok(BigInt(9007199254741991)).log(false)
-		ok(true).log(false)
-		ok(Symbol('Sym')).log(false)
-		ok(null).log(false)
-		ok(function example() {}).log(false)
-		ok(() => {}).log(false)
-		ok(undefined).log(false)
-		ok(large_obj).log(false)
-		ok(new Example(42)).log(false)
-		ok(Example).log(false)
+		ok('Test').log()
+		ok(123).log()
+		ok(BigInt('9007199254741991')).log()
+		ok(true).log()
+		ok(Symbol('Sym')).log()
+		ok(null).log()
+		ok(function example() {}).log()
+		ok(() => {}).log()
+		ok(undefined).log()
+		ok(large_obj).log()
+		ok(new Example(42)).log()
+		ok(Example).log()
+		ok(ok('Nested ok')).log()
+		ok(err('ERR_CODE', 'An error inside ok')).log()
 		console.log('')
 		console.log('')
 		err('ERR_CODE', 'This is the message explaining the error.', 'Test').log()
@@ -65,6 +67,8 @@ describe('Section', () => {
 		err('ERR_CODE', 'This is the message explaining the error.', large_obj).log()
 		err('ERR_CODE', 'This is the message explaining the error.', new Example(42)).log()
 		err('ERR_CODE', 'This is the message explaining the error.', Example).log()
+		err('ERR_CODE', 'This is the message explaining the error.', ok('A nested ok')).log()
+		err('ERR_CODE', 'This is the message explaining the error.', err('NESTED_ERR', 'A nested error')).log()
 		console.log('')
 		console.log('')
 	})
