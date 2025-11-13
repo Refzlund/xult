@@ -1,5 +1,11 @@
 # xult
 
+## 1.1.1
+
+### Patch Changes
+
+- fix: `func(async)` infinite recursion in function execution ([#8](https://github.com/Refzlund/xult/pull/8))
+
 ## 1.1.0
 
 ### Minor Changes
