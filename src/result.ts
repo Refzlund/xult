@@ -566,15 +566,17 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 
 		// Core logic for executing the function and processing its output.
 		// This is also async to handle all cases (promises, async generators).
-		const execute = (fnArgs: any[], out?: ReturnType<typeof fn>): Result.Any | Promise<Result.Any> => {
+		const execute = (fnArgs: any[], out?: ReturnType<typeof fn>, isInitialCall = true): Result.Any | Promise<Result.Any> => {
 			try {
-				// only set out if missing
-				out ??= fn(...fnArgs)
+				// only set out if missing AND this is the initial call
+				if (isInitialCall) {
+					out = fn(...fnArgs)
+				}
 				
 				// Await promises that are not generators
 				if (out instanceof Promise && typeof (<{ next?: unknown }>out).next !== 'function') {
 					return out
-						.then(o => execute(fnArgs, o))
+						.then(o => execute(fnArgs, o, false))
 						.catch(toThrownError)
 				}
 
