@@ -115,6 +115,10 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return result
 	}
 
+	toString() {
+		return JSON.stringify(this.toJSON())
+	}
+
 	[Symbol.toStringTag]() {
 		if (this instanceof Ok) {
 			return `Result.Ok<${typeof this.value}>`
@@ -187,6 +191,34 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		if (!(this instanceof Err)) return false
 		if (code === undefined) return true
 		return this.code === code
+	}
+
+	map<TResult extends Result.Any, TNewValue>(this: TResult, fn: (value: TValue) => TNewValue): Result<TNewValue, Result.ErrorOf<TResult>> {
+		if (this.isOk()) {
+			return Result.ok(fn(this.value!))
+		}
+		return this as any
+	}
+
+	catch<TNewValue>(fn: (error: TError) => TNewValue): Result<TValue | TNewValue, never> {
+		if (this.isErr()) {
+			return Result.ok(fn(this as any))
+		}
+		return this as any
+	}
+
+	ifOk(fn: (value: TValue) => void): this {
+		if (this.isOk()) {
+			fn(this.value!)
+		}
+		return this
+	}
+
+	ifErr<TResult extends Result.Any>(this: TResult, fn: (error: Result.Err<never, Result.ErrorOf<TResult>>) => void): this {
+		if (this.isErr()) {
+			fn(this as any)
+		}
+		return this as any
 	}
 
 	static ok(): Ok<void, never>
@@ -656,27 +688,48 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		} as any
 	}
 	
-	static fromJSON<TResult>(result: TResult): Result<
-		Result.JSONShapeToResult<TResult>
-		,
-		| { code: 'NOT_RESULT_JSON', message: string, details: { input: TResult, expected: typeof Result.jsonShape } }
-		| { code: 'BAD_ERR_JSON', message: string, details: { code: string, message: string } }
-		| Result.BadType<typeof Result.jsonShape>
-	> {
-		if(typeof result !== 'object' || result === null) {
+	static isJSON(value: unknown): value is Result.JSONShape {
+		return (
+			typeof value === 'object' &&
+			value !== null &&
+			'ok' in value &&
+			typeof (value as any).ok === 'boolean'
+		)
+	}
+
+	static fromJSON<TResult>(result: TResult): 
+		TResult extends Promise<infer U> 
+			? Promise<Result<Result.JSONShapeToResult<U>, Result.FromJSONError>>
+			: Result<Result.JSONShapeToResult<TResult>, Result.FromJSONError> 
+	{
+		if (result instanceof Promise) {
+			return result.then(r => Result.fromJSON(r)) as any
+		}
+
+		let parsed: any = result
+		if (typeof result === 'string') {
+			try {
+				parsed = JSON.parse(result)
+			} catch (e) {
+				return Result.err('JSON_PARSE_ERROR', 'Failed to parse JSON string', { input: result, error: e }) as any
+			}
+		}
+
+		if(typeof parsed !== 'object' || parsed === null) {
 			return Result.err('BAD_TYPE', 'Type is not of expected type', {
 				expected: Result.jsonShape,
-				got: typeof result
-			}
-			) as any
+				got: typeof parsed
+			}) as any
 		}
-		if(!('ok' in result)) {
+
+		if(!Result.isJSON(parsed)) {
 			return Result.err('NOT_RESULT_JSON', 'The input was not a result JSON', {
-				input: result,
+				input: parsed,
 				expected: Result.jsonShape
 			}) as any
 		}
-		const res = result as Result.JSONShape
+
+		const res = parsed as Result.JSONShape
 		// oxlint-disable-next-line no-extra-boolean-cast
 		if(!!res.ok) {
 			const ok = Result.ok(res.value)
@@ -688,6 +741,20 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		const err = Result.err(res.code, res.message, res.details)
 		err.stack = res.stack
 		return Result.ok(err) as any
+	}
+
+	static tryJSON<TResult>(result: TResult): 
+		TResult extends Promise<infer U>
+			? Promise<Result.JSONShapeToResult<U> | undefined>
+			: Result.JSONShapeToResult<TResult> | undefined
+	{
+		if (result instanceof Promise) {
+			return result.then(r => Result.tryJSON(r)) as any
+		}
+
+		const res = Result.fromJSON(result) as Result.Any
+		if (res.isErr()) return undefined as any
+		return res.value
 	}
 }
 
@@ -712,7 +779,7 @@ if(typeof window !== 'undefined') {
 
 	const quoteString = (value: string) => `'${sanitizeString(value)}'`
 
-	const formatInlineValue = (value: unknown): any | null => {
+	const formatInlineValue = (value: unknown): any => {
 		if(value === undefined) return null
 		if(value instanceof Result) {
 			return ['span', { style: 'color: #9ca3af; font-style: italic; white-space: pre;' }, '[Result]']
@@ -888,6 +955,7 @@ export namespace Result {
 		>
 
 	export type AsErrorShape<T, TFallback = never> = T extends ErrorShape ? T : TFallback
+	export type AsLooseErrorShape<T, TFallback = never> = T extends LooseErrorShape ? T : TFallback
 
 	/**
 	 * An error always has a `message`,
@@ -931,6 +999,8 @@ export namespace Result {
 		| (Extract<T, Err<never, any>> extends infer Y ? [Y] extends [never] ? never : Y extends Err<never, infer E> ? E : never : never)
 		| (Exclude<T> extends infer Y ? [Y] extends [never] ? never : Y extends LooseErrorShape ? Y : never : never)
 	) extends infer X ? [X] extends [never] ? TFallback : X extends LooseErrorShape ? X : TFallback : TFallback
+
+	export type ErrorOnly<T, TFallback = never> = Err<never, AsLooseErrorShape<ErrorOf<T, TFallback>>>
 
 	/**
 	 * Extract the TValue of any Result type (or returns the non-Result type)
@@ -991,4 +1061,10 @@ export namespace Result {
 			got: TGot
 		}
 	}
+
+	export type FromJSONError = 
+		| { code: 'NOT_RESULT_JSON', message: string, details: { input: unknown, expected: string } }
+		| { code: 'BAD_ERR_JSON', message: string, details: { code: string, message: string } }
+		| { code: 'JSON_PARSE_ERROR', message: string, details: { input: string, error: unknown } }
+		| Result.BadType<string>
 }
