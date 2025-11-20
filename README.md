@@ -1,4 +1,3 @@
-
 <div align='center'>
     <img src='./.github/XULT.png' width=500 alt='XULT logo' />
     <br>
@@ -365,6 +364,52 @@ Prefer the safe pattern whenever possible—`Result` makes it ergonomic to avoid
 <br>
 <br>
 
+## Transformation & Recovery
+
+`xult` provides methods to transform values and recover from errors without breaking the chain.
+
+- **`result.map(fn)`**  
+  Transform the value if the result is `Ok`. If it's `Err`, the error is passed through.
+  ```ts
+  const result = ok(10).map(n => n * 2) // Ok(20)
+  ```
+
+- **`result.catch(fn)`**  
+  Recover from an error by returning a new value.
+  ```ts
+  const result = err('FAIL', 'oops').catch(e => 'recovered') // Ok('recovered')
+  ```
+
+- **`result.ifOk(fn)` / `result.ifErr(fn)`**  
+  Execute side-effects (like logging) without changing the result.
+  ```ts
+  result.ifErr(e => console.error(e))
+  ```
+
+<br>
+
+## JSON Serialization
+
+`xult` results are fully serializable, making them easy to send over the network or store.
+
+- **`result.toJSON()`** / **`result.toString()`**  
+  Convert a result to a plain JSON object or string.
+
+- **`Result.fromJSON(json)`**  
+  Restore a result from a JSON string, object, or promise.
+  ```ts
+  const result = await Result.fromJSON(fetch('/api/data').then(r => r.json()))
+  ```
+
+- **`Result.tryJSON(json)`**  
+  Safely attempt to parse a value into a Result. Returns `undefined` if the shape doesn't match.
+
+- **`Result.isJSON(value)`**  
+  Check if a value matches the Result JSON shape.
+
+<br>
+<br>
+
 ## API Overview
 
 **Static helpers**
@@ -374,13 +419,19 @@ Prefer the safe pattern whenever possible—`Result` makes it ergonomic to avoid
 - `Result.func([schemas?], fn, handleError?)` – wrap sync, async, or generator functions (with optional validation)
 - `Result.validate(schema | schemas, input)` – validate inputs using any [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema) implementation
 - `Result.fromJSON(json)` – restore a result from its serialised shape
+- `Result.tryJSON(json)` – safely parse JSON into Result or undefined
+- `Result.isJSON(value)` – check if value is a Result JSON shape
 
 **Instance helpers**
 - `result.isOk()` / `result.isErr(code?)` – type-guarding checks with optional error-code narrowing
+- `result.map(fn)` – transform Ok value
+- `result.catch(fn)` – recover from Err
+- `result.ifOk(fn)` / `result.ifErr(fn)` – side-effects
 - `result._unsafeUnwrap()` – throw if `Err`, otherwise return the inner value
 - `result.toJSON()` – serialise a result for transport or storage
+- `result.toString()` – JSON string representation
 
 **Utilities & types**
 - `Result.ValidationError(issues)` – standardised validation failure shape
 - `Result.ThrownError(details)` – wraps unknown thrown errors
-- Type exports: `Result.Ok`, `Result.Err`, `Result.Any`, `Result.ValueOf<T>`, `Result.ErrorOf<T>` for advanced typing needs
+- Type exports: `Result.Ok`, `Result.Err`, `Result.Any`, `Result.ValueOf<T>`, `Result.ErrorOf<T>`, `Result.ErrorOnly<T>` for advanced typing needs
