@@ -14,10 +14,10 @@ const expectErr = <C extends string>(result: Result.Any, code: C) => {
 describe('Real World: Transport Layer', () => {
 	test('round-trips a success result through a message bus payload', () => {
 		const original = ok({ jobId: '42', status: 'COMPLETE' })
-		const wirePayload = JSON.stringify(original.toJSON())
+		const wirePayload = original.toString()
 
-		const outer = expectOk(Result.fromJSON(JSON.parse(wirePayload)))
-		const inner = outer ? expectOk(outer) : undefined
+		const outer = expectOk(Result.fromJSON(wirePayload))
+		const inner = (outer ? expectOk(outer) : undefined) as { jobId: string; status: string } | undefined
 
 		if (inner) {
 			expect(inner.jobId).toBe('42')
@@ -29,7 +29,7 @@ describe('Real World: Transport Layer', () => {
 		const failure = err('RETRYABLE', 'Search index unavailable', { attempt: 3 })
 		const encoded = JSON.stringify(failure.toJSON())
 
-		const outer = expectOk(Result.fromJSON(JSON.parse(encoded)))
+		const outer = expectOk(Result.fromJSON(JSON.parse(encoded) as Record<string, unknown>))
 		const inner = outer ? expectErr(outer, 'RETRYABLE') : undefined
 		const details = inner?.details as { attempt: number } | undefined
 

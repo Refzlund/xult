@@ -10,7 +10,7 @@ const large_obj = {
 	f: function example() {},
 	g: null,
 	h: undefined,
-	i: BigInt(9007199254741991),
+	i: BigInt('9007199254741991'),
 	j: Symbol('Sym'),
 	k: err('NESTED', 'Nested error'),
 	ok: ok({
@@ -56,7 +56,7 @@ describe.skip('Pretty log', () => {
 		console.log('')
 		err('ERR_CODE', 'This is the message explaining the error.', 'Test').log()
 		err('ERR_CODE', 'This is the message explaining the error.', 123).log()
-		err('ERR_CODE', 'This is the message explaining the error.', BigInt(9007199254741991)).log()
+		err('ERR_CODE', 'This is the message explaining the error.', BigInt('9007199254741991')).log()
 		err('ERR_CODE', 'This is the message explaining the error.', true).log()
 		err('ERR_CODE', 'This is the message explaining the error.', Symbol('Sym')).log()
 		err('ERR_CODE', 'This is the message explaining the error.', null).log()

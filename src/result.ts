@@ -779,7 +779,7 @@ if(typeof window !== 'undefined') {
 
 	const quoteString = (value: string) => `'${sanitizeString(value)}'`
 
-	const formatInlineValue = (value: unknown): any | null => {
+	const formatInlineValue = (value: unknown): any => {
 		if(value === undefined) return null
 		if(value instanceof Result) {
 			return ['span', { style: 'color: #9ca3af; font-style: italic; white-space: pre;' }, '[Result]']
