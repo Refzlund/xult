@@ -1,5 +1,25 @@
 # xult
 
+## 1.2.0
+
+### Minor Changes
+
+- feat: add `result.ifOk(...)` method to execute a function only if the result is Ok. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: update `result.toString()` to return a JSON string representation of the result. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: add `result.ifErr(...)` method to execute a function only if the result is Err. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: add `Result.tryJSON(...)` static method to attempt parsing a JSON value into a Result, returning `undefined` on failure instead of a nested Result. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: add `result.map(...)` method to transform the value of an Ok result. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: add `result.catch(...)` method to handle errors and recover with a new value. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: add `Result.isJSON(...)` static method to check if a value matches the JSON shape of a Result. ([#10](https://github.com/Refzlund/xult/pull/10))
+
+- feat: update `Result.fromJSON(...)` to accept strings, objects, and promises resolving to them. ([#10](https://github.com/Refzlund/xult/pull/10))
+
 ## 1.1.1
 
 ### Patch Changes
