@@ -414,6 +414,8 @@ Prefer the safe pattern whenever possible—`Result` makes it ergonomic to avoid
 
 `xult` results are fully serializable, making them easy to send over the network or store.
 
+For more on serialization, see [SERIALIZATION.md](./SERIALIZATION.md).
+
 - **`result.toJSON()`** / **`result.toString()`**  
   Convert a result to a plain JSON object or string.
 
@@ -427,7 +429,12 @@ Prefer the safe pattern whenever possible—`Result` makes it ergonomic to avoid
   Safely attempt to parse a value into a Result. Returns `undefined` if the shape doesn't match.
 
 - **`Result.isJSON(value)`**  
-  Check if a value matches the Result JSON shape.
+  Check if a value matches the Result JSON shape.  
+  A valid JSON shape contains either `ok: true` or `ok: false, code: string, message: string`,
+  as these are the required properties for `Result.ok` and `Result.err`
+
+- **`Result.maybe(value)`**  
+  ...
 
 <br>
 <br>
