@@ -203,6 +203,64 @@ describe('Result.func', () => {
 			expect(called).toBe(false)
 		})
 	})
+
+	describe('Class Methods with func', () => {
+		class Example {
+			baseValue = 10
+
+			multiply = func((x: number, y: number) => x * y)
+
+			squared = func(function(this: Example, num: number) {
+				return `Example says: ${this.multiply(num, num).value}`
+			})
+
+			asyncAdd = func(async function(this: Example, n: number) {
+				return this.baseValue + n
+			})
+
+			genAdd = func(function*(this: Example, n: number) {
+				yield
+				return this.baseValue + n
+			})
+
+			asyncGenAdd = func(async function*(this: Example, n: number) {
+				yield
+				return this.baseValue + n
+			})
+		}
+
+		test('should wrap class methods and preserve this context (sync)', async () => {
+			const ex = new Example()
+			const r1 = ex.multiply(3, 4)
+			expect(r1.isOk()).toBe(true)
+			expect(r1.value).toBe(12)
+
+			const r2 = ex.squared(5)
+			expect(r2.isOk()).toBe(true)
+			expect(r2.value).toBe('Example says: 25')
+		})
+
+		test('should preserve this context in async functions', async () => {
+			const ex = new Example()
+			const r = await ex.asyncAdd(5)
+			expect(r.isOk()).toBe(true)
+			expect(r.value).toBe(15)
+		})
+
+		test('should preserve this context in generator functions', () => {
+			const ex = new Example()
+			const r = ex.genAdd(5)
+			expect(r.isOk()).toBe(true)
+			expect(r.value).toBe(15)
+		})
+
+		test('should preserve this context in async generator functions', async () => {
+			const ex = new Example()
+			const r = await ex.asyncGenAdd(5)
+			expect(r.isOk()).toBe(true)
+			expect(r.value).toBe(15)
+		})
+	})
 })
 
 describe('[type] Result.func', () => {
