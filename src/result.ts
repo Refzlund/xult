@@ -682,23 +682,36 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	) extends infer X ? [X] extends [never] ? Result.JSONShape : { [K in keyof X]: X[K] } : never
 	{
 		const self = this as Result.Any
-		return {
-			ok: self instanceof Ok,
-			value: self.value,
-			code: self.code,
-			message: self.message,
-			details: self.details,
-			stack: self.stack,
-		} as any
+		const obj = { ok: self instanceof Ok } as {
+			ok: boolean
+			value?: any
+			code?: string
+			message?: string
+			details?: any
+			stack?: string
+		}
+
+		if(self instanceof Ok) {
+			obj.value = self.value
+		} else {
+			obj.code = self.code
+			obj.message = self.message
+			obj.details = self.details
+			obj.stack = self.stack
+		}
+		return obj as any
 	}
 	
 	static isJSON(value: unknown): value is Result.JSONShape {
-		return (
-			typeof value === 'object' &&
-			value !== null &&
-			'ok' in value &&
-			typeof (value as any).ok === 'boolean'
-		)
+		if(typeof value !== 'object' || value === null) return false
+		if(!('ok' in value)) return false
+		if(typeof value.ok !== 'boolean') return false
+		if(value.ok) return true
+		if(!('code' in value)) return false
+		if(typeof value.code !== 'string') return false
+		if(!('message' in value)) return false
+		if(typeof value.message !== 'string') return false
+		return true
 	}
 
 	static fromJSON<TResult>(result: TResult): 
@@ -735,7 +748,7 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 
 		const res = parsed as Result.JSONShape
 		// oxlint-disable-next-line no-extra-boolean-cast
-		if(!!res.ok) {
+		if(res.ok) {
 			const ok = Result.ok(res.value)
 			return Result.ok(ok) as any
 		}
@@ -752,6 +765,9 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			? Promise<Result.JSONShapeToResult<U> | undefined>
 			: Result.JSONShapeToResult<TResult> | undefined
 	{
+		if(result instanceof Result) {
+			return result as any
+		}
 		if (result instanceof Promise) {
 			return result.then(r => Result.tryJSON(r)) as any
 		}
@@ -895,6 +911,7 @@ class Ok<
 	TError extends Result.LooseErrorShape = never
 	// @ts-expect-error Cannot extend class with a private constructor
 > extends Result<TValue, TError> {
+	ok = true as const
 	declare value: TValue
 }
 
@@ -903,6 +920,7 @@ class Err<
 	TError extends Result.LooseErrorShape = Result.LooseErrorShape
 	// @ts-expect-error Cannot extend class with a private constructor
 > extends Result<TValue, TError> {
+	ok = false as const
 	declare code: TError['code']
 	declare message: NonNullable<TError['message']>
 	details = undefined as TError['details']
