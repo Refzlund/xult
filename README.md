@@ -288,6 +288,28 @@ if (validationErrorResult.isErr('FUNC_VALIDATION_ERROR')) {
 
 <br>
 
+### Class Methods
+
+`Result.func` preserves the `this` context, allowing you to wrap methods that access instance properties.
+
+```typescript
+import { func, ok } from 'xult'
+
+class User {
+    constructor(private name: string) {}
+
+    // Use a regular function to access `this`
+    greet = func(function(this: User) {
+        return ok(`Hello, I am ${this.name}`)
+    })
+}
+
+const user = new User('Alice')
+const result = user.greet() // Ok('Hello, I am Alice')
+```
+
+<br>
+
 ### Elegant Workflows with Generators
 
 This is where `xult` shines. Generator functions let you write sequential, business-friendly logic without the `if (result.isErr())` pyramid.
