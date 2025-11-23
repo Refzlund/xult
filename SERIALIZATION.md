@@ -46,13 +46,13 @@ rehydrates results passing `Result.isJSON` or converts non-result values into a 
 import Result, { funcJSON, from } from 'xult'
 
 export class MyDO extends DurableObject {
-    // This returns a Result object
-    sayHello = funcJSON(async (name: string) => {
+    // This returns a Result object as JSON rather than an instance
+    sayHello = funcJSON((name: string) => {
         if (!name) return Result.err('NAME_REQUIRED', 'Name argument is required to pass into the function.')
         return `Hello, ${name}!`
     })
 
-    processHello = funcJSON(async (this: MyDO, name: string) => {
+    processHello = funcJSON(function * (this: MyDO, name: string) {
         // extract `Result.ok` like normal
         const helloString = yield* this.sayHello('Shiba')
         

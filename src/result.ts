@@ -677,8 +677,8 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 
 	// note: does not extend `Result.Any` due to circulary errors with fromJSON
 	toJSON<TThis>(this: TThis): (
-		| (Result.ValueOf<TThis> extends infer X ? [X] extends [never] ? never : { value: X, ok: true, code?: never, message?: never, details?: never, stack?: never } : never)
-		| (Result.ErrorOf<TThis> extends infer X ? [X] extends [never] ? never : X & { ok: false, value?: never, stack?: string} & (X extends { message: any } ? {} : { message: string }) : never)
+		| (Result.ValueOf<TThis> extends infer X ? [X] extends [never] ? never : { value: X, ok: true } : never)
+		| (Result.ErrorOf<TThis> extends infer X ? [X] extends [never] ? never : X & { ok: false, stack?: string} & (X extends { message: any } ? {} : { message: string }) : never)
 	) extends infer X ? [X] extends [never] ? Result.JSONShape : { [K in keyof X]: X[K] } : never
 	{
 		const self = this as Result.Any
@@ -739,7 +739,14 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			}) as any
 		}
 
-		if(!Result.isJSON(parsed)) {
+		const validResult = (
+			typeof parsed === 'object'
+			&& parsed
+			&& 'ok' in parsed
+			&& typeof parsed.ok === 'boolean'
+		)
+
+		if(!validResult) {
 			return Result.err('NOT_RESULT_JSON', 'The input was not a result JSON', {
 				input: parsed,
 				expected: Result.jsonShape
@@ -793,10 +800,26 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	 * from(Result.err('SOME_ERROR', 'An error occurred')) // Result<never, { code: 'SOME_ERROR' }>
 	 * ```
 	*/
-	static from<TResult>(result: TResult | Promise<TResult>):
-		/* ... todo ... */
+	static from<TResult>(result: TResult):
+		Result<
+			Awaited<TResult> extends { ok: true, value: infer V } ? V : Result.ValueOf<Exclude<Awaited<TResult>, { ok: false, code: string }>>, 
+			Result.SimplifyError<Result.ErrorOf<Awaited<TResult>>>
+		> extends infer X
+		? TResult extends Promise<any>
+			? Promise<X>
+			: X
+		: never
 	{
-		
+		if(result instanceof Promise) {
+			return result.then(r => Result.from(r)) as any
+		}
+		if(result instanceof Result) {
+			return result as any
+		}
+		if(Result.isJSON(result)) {
+			return Result.tryJSON(result) as any
+		}
+		return Result.ok(result) as any
 	}
 
 	/**
@@ -816,13 +839,49 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	 * fromSafe(() => someFunc()) // Result<string | number, Result.ThrownError | { code: 'SOME_ERROR' | 'ANOTHER_CODE' }>
 	 * ```
 	*/
-	static fromSafe<TResult>(
-		result: () => TResult | Promise<TResult>,
-		handleException?
-	):
-		/* ... todo ... */
+	static fromSafe<
+		TResult,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		result: () => TResult,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): 
+		[TResult] extends [never] ? Result<unknown, Result.ErrorOf<TException, Result.ThrownError>> :
+		TResult extends Promise<infer U>
+			? Promise<Result<
+				Result.ValueOf<U>,
+				Result.ErrorOf<U> | Result.ErrorOf<TException, Result.ThrownError>
+			>>
+			: Result<
+				Result.ValueOf<TResult>,
+				Result.ErrorOf<TResult> | Result.ErrorOf<TException, Result.ThrownError>
+			>
 	{
+		const toThrownError = (error: unknown) => {
+			const err = (
+				error instanceof Err 
+					? error
+					: Result.err(Result.ThrownError(error))
+			) as Result.Err<never, Result.ThrownError>
+			
+			if(handleException) {
+				const handled = handleException(err)
+				return handled instanceof Result ? handled : Result.err(handled)
+			}
+			return err
+		}
 
+		try {
+			const r = result()
+			if(r instanceof Promise) {
+				return r
+					.then(value => this.from(value))
+					.catch(toThrownError) as any
+			}
+			return this.from(r) as any
+		} catch (error) {
+			return toThrownError(error) as any
+		}
 	}
 }
 
@@ -1035,7 +1094,7 @@ export namespace Result {
 	 * Details will only be included if the `details` key exists
 	 * and is not `undefined`.
 	*/
-	export type SimplifyError<TErr extends ErrorShape | LooseErrorShape> = ({
+	export type SimplifyError<TErr extends ErrorShape | LooseErrorShape> = [TErr] extends [never] ? never : ({
 		code: TErr['code']
 	} & (
 		// Include message only if it's a specific string literal (not the general 'string' type)
