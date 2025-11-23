@@ -29,10 +29,10 @@ export const transport: Transport = {
 In the Cloudflare RPC (Remote Procedure Call) world `toJSON` is not called during serialization (i.e. when using structured clone).
 Instead it will throw `[wrangler:error] DataCloneError: Could not serialize object of type "Result". This type does not support serialization.`.
 
-Therefore we have `Result.func.json` which returns results as a serialized JSON object, and `Result.from` which
+Therefore we have `Result.funcJSON` which returns results as a serialized JSON object, and `Result.from` which
 rehydrates results passing `Result.isJSON` or converts non-result values into a `Result.ok`.
 
-`Result.func.json` also includes the iterator to the output, so it can be yielded in generator functions.
+`Result.funcJSON` also includes the iterator to the output, so it can be yielded in generator functions.
 
 (P.S. `Result.fromSafe(() => ...)` accepts a function that catches exceptions, providing a `Result.err`).
 
@@ -43,16 +43,16 @@ rehydrates results passing `Result.isJSON` or converts non-result values into a 
 ### RPC functions
 
 ```typescript
-import Result, { func, from } from 'xult'
+import Result, { funcJSON, from } from 'xult'
 
 export class MyDO extends DurableObject {
     // This returns a Result object
-    sayHello = func.json(async (name: string) => {
+    sayHello = funcJSON(async (name: string) => {
         if (!name) return Result.err('NAME_REQUIRED', 'Name argument is required to pass into the function.')
         return `Hello, ${name}!`
     })
 
-    processHello = func.json(async (this: MyDO, name: string) => {
+    processHello = funcJSON(async (this: MyDO, name: string) => {
         // extract `Result.ok` like normal
         const helloString = yield* this.sayHello('Shiba')
         
