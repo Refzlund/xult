@@ -26,36 +26,38 @@ export const transport: Transport = {
 
 ## Cloudflare Durable Objects (RPC)
 
-In the Cloudflare RPC world `toJSON` is not called during serialization (i.e. structured clone).
+In the Cloudflare RPC (Remote Procedure Call) world `toJSON` is not called during serialization (i.e. when using structured clone).
 Instead it will throw `[wrangler:error] DataCloneError: Could not serialize object of type "Result". This type does not support serialization.`.
 
-Therefore we have `Result.func.rpc` (Remote Procedure Call) which returns results as a serialized JSON object, and `Result.maybe` which
+Therefore we have `Result.func.json` which returns results as a serialized JSON object, and `Result.from` which
 rehydrates results passing `Result.isJSON` or converts non-result values into a `Result.ok`.
 
-(P.S. `Result.maybe(() => ...)` as a function can also catch exceptions, providing a `Result.err`).
+`Result.func.json` also includes the iterator to the output, so it can be yielded in generator functions.
 
-`Result.maybe` is like `Result.tryJSON` but gurantees a `Result`.
+(P.S. `Result.fromSafe(() => ...)` accepts a function that catches exceptions, providing a `Result.err`).
+
+`Result.from` is like `Result.tryJSON` but gurantees a `Result` by converting non-Results into results.
 
 <br>
 
 ### RPC functions
 
 ```typescript
-import Result, { func, maybe } from 'xult'
+import Result, { func, from } from 'xult'
 
 export class MyDO extends DurableObject {
     // This returns a Result object
-    sayHello = func.rpc(async (name: string) => {
+    sayHello = func.json(async (name: string) => {
         if (!name) return Result.err('NAME_REQUIRED', 'Name argument is required to pass into the function.')
         return `Hello, ${name}!`
     })
 
-    processHello = func.rpc(async (this: MyDO, name: string) => {
+    processHello = func.json(async (this: MyDO, name: string) => {
         // extract `Result.ok` like normal
         const helloString = yield* this.sayHello('Shiba')
         
         // or convert to Result and ex. handle the error
-        const result = maybe(this.sayHello('Shiba'))
+        const result = from(this.sayHello('Shiba'))
             .mapErr(() => Result.err('UNHELLOABLE', 'Could not say hello'))
 
         ...

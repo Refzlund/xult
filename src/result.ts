@@ -776,6 +776,54 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		if (res.isErr()) return undefined as any
 		return res.value
 	}
+
+	/**
+	 * Converts a value or a promise of a value into a Result.
+	 * If the value is already a Result, it is returned as-is.
+	 *
+	 * @example
+	 * ```ts
+	 * from(123) // Result<number, never>
+	 * from(123 as const) // Result<123, never>
+	 * from(Promise.resolve(123)) // Promise<Result<number, never>>
+	 * from(Result.ok(123)) // Result<number, never>
+	 * from(moreResults) // Result<number | string, { code: 'ERROR_CODE' | 'ANOTHER_CODE' }>
+	 * from({ ok: true, value: 123 }) // Result<number, never>
+	 * from({ ok: false, code: 'SOME_ERROR', message: 'An error occurred' }) // Result<never, { code: 'SOME_ERROR' }>
+	 * from(Result.err('SOME_ERROR', 'An error occurred')) // Result<never, { code: 'SOME_ERROR' }>
+	 * ```
+	*/
+	static from<TResult>(result: TResult | Promise<TResult>):
+		/* ... todo ... */
+	{
+		
+	}
+
+	/**
+	 * Converts a value or a promise of a value into a Result.
+	 * If the value is already a Result, it is returned as-is.
+	 * 
+	 * If an error is thrown during the execution of the function, it is caught and returned as an Err.
+	 * 
+	 * Unlike `Result.func`, the callback function is run immediately, returning a Result.
+	 * 
+	 * @example
+	 * ```ts
+	 * fromSafe(() => 123) // Result<number, Result.ThrownError>
+	 * fromSafe(async () => 123) // Promise<Result<number, Result.ThrownError>>
+	 * fromSafe(() => { throw new Error('Oops') }) // Result<never, Result.ThrownError>
+	 * fromSafe(async () => { throw new Error('Oops') }) // Promise<Result<never, Result.ThrownError>>
+	 * fromSafe(() => someFunc()) // Result<string | number, Result.ThrownError | { code: 'SOME_ERROR' | 'ANOTHER_CODE' }>
+	 * ```
+	*/
+	static fromSafe<TResult>(
+		result: () => TResult | Promise<TResult>,
+		handleException?
+	):
+		/* ... todo ... */
+	{
+
+	}
 }
 
 if(typeof window !== 'undefined') {
