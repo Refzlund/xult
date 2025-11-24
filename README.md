@@ -343,6 +343,26 @@ const processOrder = func(function*(input: OrderInput) {
 
 Each `yield*` unwraps an `Ok` value or exits early with the originating `Err`, preserving the original error shape and stack trace.
 
+<br>
+
+### JSON Handlers with `Result.funcJSON`
+
+`Result.funcJSON` works exactly like `Result.func`, but automatically converts the result to a JSON-serializable object. This is especially useful for API endpoints where you need to send results over the network. See [Serialization.md](./SERIALIZATION.md) for more info.
+
+```ts
+import { funcJSON } from 'xult'
+
+const handler = funcJSON(async function*(req) {
+    const user = yield* getUser(req.params.id)
+    const posts = yield* getUserPosts(user.id)
+    return { user, posts }
+})
+
+// Returns: { ok: true, value: { user: {...}, posts: [...] } }
+// Or: { ok: false, code: 'NOT_FOUND', message: 'User not found', stack: '...' }
+```
+
+
 <br><br>
 
 ## Unwrapping Results
@@ -433,6 +453,16 @@ For more on serialization, see [SERIALIZATION.md](./SERIALIZATION.md).
   A valid JSON shape contains either `ok: true` or `ok: false, code: string, message: string`,
   as these are the required properties for `Result.ok` and `Result.err`
 
+- **`Result.from(value)`**  
+  Converts any value into a Result. If the value is already a Result, returns it as-is. If it's a JSON shape (`{ ok: true, value }` or `{ ok: false, code, message }`), it's converted to a Result. Otherwise, wraps the value in `Result.ok()`. Also handles promises.
+  ```ts
+  Result.from(123)                    // Result<number, never>
+  Result.from(Result.ok(42))          // Result<number, never>
+  Result.from({ ok: true, value: 5 }) // Result<number, never>
+  Result.from(Promise.resolve(10))    // Promise<Result<number, never>>
+  Result.from({ ok: false, code: 'ERR', message: 'fail' }) // Result<never, { code: 'ERR' }>
+  ```
+
 - **`Result.maybe(value)`**  
   ...
 
@@ -446,7 +476,9 @@ For more on serialization, see [SERIALIZATION.md](./SERIALIZATION.md).
 - `Result.err(code, message, details?)` – build structured errors consistently
 - `Result.async(promise, handleError?)` – convert promises into `Result`
 - `Result.func([schemas?], fn, handleError?)` – wrap sync, async, or generator functions (with optional validation)
+- `Result.funcJSON([schemas?], fn, handleError?)` – same as `func`, but returns JSON-serializable `{ ok, value }` or `{ ok, code, message }` shape
 - `Result.validate(schema | schemas, input)` – validate inputs using any [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema) implementation
+- `Result.from(value)` – convert any value (plain, Result, JSON shape, or Promise) into a Result
 - `Result.fromJSON(json)` – restore a result from its serialised shape
 - `Result.tryJSON(json)` – safely parse JSON into Result or undefined
 - `Result.isJSON(value)` – check if value is a Result JSON shape
