@@ -34,7 +34,7 @@ class Example {
 	}
 }
 
-describe.skip('Pretty log', () => {
+describe('Pretty log', () => {
 	test(`pretty print tests`, async () => {
 		console.log('')
 		console.log('')

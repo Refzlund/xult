@@ -25,15 +25,45 @@ type Fallback<T, TFallback> = [T] extends [never] ? TFallback : T
 
 type IsAny<T> = 0 extends (1 & T) ? true : false
 
+/**
+ * A Result type that represents either success (Ok) or failure (Err).
+ * 
+ * Results provide a type-safe way to handle errors without exceptions,
+ * enabling railway-oriented programming patterns.
+ * 
+ * @template TValue - The type of the success value
+ * @template TError - The type of the error (must extend Result.LooseErrorShape)
+ * 
+ * @example
+ * ```ts
+ * const result = await fetchUser(id)
+ * if (result.isOk()) {
+ *   console.log(result.value.name)
+ * } else {
+ *   console.error(result.code, result.message)
+ * }
+ * ```
+ */
 export class Result<TValue, TError extends Result.LooseErrorShape> {
+	/** Unique symbol to identify Result instances */
+	static symbol = Symbol('Result')
+	/** Instance symbol for type checking */
+	symbol = Result.symbol
+
 	private constructor() {}
 
+	/** The success value (only present when isOk() is true) */
 	value?: TValue
+	/** The error code (only present when isErr() is true) */
 	code?: TError['code']
+	/** The error message (only present when isErr() is true) */
 	message?: TError['message']
+	/** Additional error details (only present when isErr() is true) */
 	details?: TError['details']
+	/** Stack trace for errors */
 	stack?: string
 
+	/** Logs the result to the console */
 	log() { console.log(this) }
 
 	#log(depth: number = 4) {
@@ -115,6 +145,10 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return result
 	}
 
+	/**
+	 * Converts the Result to a JSON string representation.
+	 * @returns A JSON string of the Result
+	 */
 	toString() {
 		return JSON.stringify(this.toJSON())
 	}
@@ -130,6 +164,22 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this.#log(depth)
 	}
 
+	/**
+	 * Wraps a Promise and converts it to a Promise<Result>.
+	 * Catches any thrown errors and converts them to Result.Err with THROWN_ERROR code.
+	 * 
+	 * @param promise - The promise to wrap
+	 * @param handleError - Optional handler to transform thrown errors
+	 * @returns A Promise that resolves to a Result
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = await Result.async(fetch('/api/user'))
+	 * if (result.isErr()) {
+	 *   console.error('Request failed:', result.message)
+	 * }
+	 * ```
+	 */
 	static async<
 		T,
 		TErr extends Result.Err | Result.ErrorShape = never
@@ -158,6 +208,21 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		}) as any
 	}
 
+	/**
+	 * Type guard that checks if this Result is Ok (success).
+	 * Narrows the type to Ok, giving access to the value property.
+	 * 
+	 * @returns true if this is an Ok result
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = getUser(id)
+	 * if (result.isOk()) {
+	 *   // TypeScript knows result.value exists here
+	 *   console.log(result.value.name)
+	 * }
+	 * ```
+	 */
 	isOk<
 		TThis extends Result.Any
 	>(this: TThis):
@@ -171,6 +236,27 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this instanceof Ok
 	}
 
+	/**
+	 * Type guard that checks if this Result is Err (failure).
+	 * Optionally narrows to a specific error code.
+	 * 
+	 * @param code - Optional error code to match against
+	 * @returns true if this is an Err result (and matches the code if provided)
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = getUser(id)
+	 * if (result.isErr()) {
+	 *   // TypeScript knows result.code and result.message exist here
+	 *   console.error(result.code, result.message)
+	 * }
+	 * 
+	 * // Narrow to specific error code
+	 * if (result.isErr('NOT_FOUND')) {
+	 *   // TypeScript knows result.code === 'NOT_FOUND'
+	 * }
+	 * ```
+	 */
 	isErr<
 		TThis extends Result.Any,
 		TCode extends Suggestible<Result.ErrorCodeOf<TThis>>
@@ -193,6 +279,20 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this.code === code
 	}
 
+	/**
+	 * Transforms the success value using the provided function.
+	 * If this is an Err, returns the Err unchanged.
+	 * 
+	 * @param fn - Function to transform the success value
+	 * @returns A new Result with the transformed value or the original error
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = getUser(id)
+	 *   .map(user => user.name.toUpperCase())
+	 * // Result<string, UserError>
+	 * ```
+	 */
 	map<TResult extends Result.Any, TNewValue>(this: TResult, fn: (value: TValue) => TNewValue): Result<TNewValue, Result.ErrorOf<TResult>> {
 		if (this.isOk()) {
 			return Result.ok(fn(this.value!))
@@ -200,6 +300,20 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this as any
 	}
 
+	/**
+	 * Recovers from an error by providing a fallback value.
+	 * If this is Ok, returns the Ok unchanged.
+	 * 
+	 * @param fn - Function that receives the error and returns a recovery value
+	 * @returns A new Result that is always Ok
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = getUser(id)
+	 *   .catch(err => ({ name: 'Guest', id: 0 }))
+	 * // Result<User, never> - always succeeds
+	 * ```
+	 */
 	catch<TNewValue>(fn: (error: TError) => TNewValue): Result<TValue | TNewValue, never> {
 		if (this.isErr()) {
 			return Result.ok(fn(this as any))
@@ -207,6 +321,20 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this as any
 	}
 
+	/**
+	 * Executes a side effect if this is Ok, then returns the original Result.
+	 * Useful for logging or other effects without breaking the chain.
+	 * 
+	 * @param fn - Function to execute with the success value
+	 * @returns The original Result unchanged
+	 * 
+	 * @example
+	 * ```ts
+	 * getUser(id)
+	 *   .ifOk(user => console.log('Found user:', user.name))
+	 *   .map(user => user.email)
+	 * ```
+	 */
 	ifOk(fn: (value: TValue) => void): this {
 		if (this.isOk()) {
 			fn(this.value!)
@@ -214,6 +342,20 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this
 	}
 
+	/**
+	 * Executes a side effect if this is Err, then returns the original Result.
+	 * Useful for logging errors without breaking the chain.
+	 * 
+	 * @param fn - Function to execute with the error
+	 * @returns The original Result unchanged
+	 * 
+	 * @example
+	 * ```ts
+	 * getUser(id)
+	 *   .ifErr(err => console.error('Failed:', err.code, err.message))
+	 *   .catch(() => defaultUser)
+	 * ```
+	 */
 	ifErr<TResult extends Result.Any>(this: TResult, fn: (error: Result.Err<never, Result.ErrorOf<TResult>>) => void): this {
 		if (this.isErr()) {
 			fn(this as any)
@@ -221,7 +363,23 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this as any
 	}
 
+	/**
+	 * Creates a successful Result containing void.
+	 * @returns An Ok Result with undefined value
+	 */
 	static ok(): Ok<void, never>
+	/**
+	 * Creates a successful Result containing the given value.
+	 * @param value - The success value
+	 * @returns An Ok Result containing the value
+	 * 
+	 * @example
+	 * ```ts
+	 * Result.ok(42) // Result<number, never>
+	 * Result.ok({ name: 'Alice' }) // Result<{ name: string }, never>
+	 * Result.ok() // Result<void, never>
+	 * ```
+	 */
 	static ok<TValue>(value: TValue): Ok<TValue, never>
 	static ok(value?: any): Ok<any, never> {
 		const ok = new Ok()
@@ -229,6 +387,21 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return ok as any
 	}
 
+	/**
+	 * Creates a failed Result with the given error information.
+	 * 
+	 * @param code - A unique error code string
+	 * @param message - A human-readable error message
+	 * @param details - Optional additional error details
+	 * @param stack - Optional stack trace
+	 * @returns An Err Result
+	 * 
+	 * @example
+	 * ```ts
+	 * Result.err('NOT_FOUND', 'User not found')
+	 * Result.err('VALIDATION_ERROR', 'Invalid email', { field: 'email' })
+	 * ```
+	 */
 	static err<
 		TCode extends string,
 		TDetails = undefined
@@ -243,6 +416,18 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			Result.SimplifyError<{ code: TCode, message: string, details: TDetails }>
 		>
 	
+	/**
+	 * Creates a failed Result from an error object.
+	 * 
+	 * @param error - An object containing code, message, and optional details
+	 * @returns An Err Result
+	 * 
+	 * @example
+	 * ```ts
+	 * Result.err({ code: 'NOT_FOUND', message: 'User not found' })
+	 * Result.err({ code: 'VALIDATION_ERROR', message: 'Invalid input', details: errors })
+	 * ```
+	 */
 	static err<TCode extends string, TError extends Omit<Result.ErrorShape, 'code'> & { code: TCode }>(error: TError): 
 		Err<
 			never, 
@@ -283,6 +468,27 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	}
 
 	// #region validate overloads
+	/**
+	 * Validates data against one or more StandardSchema validators.
+	 * Supports any schema library implementing the Standard Schema spec (Zod, Valibot, ArkType, etc.).
+	 * 
+	 * @param schemas - An array of StandardSchemaV1 validators
+	 * @param data - An array of values to validate (one per schema)
+	 * @returns A Promise resolving to Result with validated outputs or validation errors
+	 * 
+	 * @example
+	 * ```ts
+	 * import { z } from 'zod'
+	 * 
+	 * const result = await Result.validate(
+	 *   [z.string().email(), z.number().min(0)],
+	 *   [email, age]
+	 * )
+	 * if (result.isOk()) {
+	 *   const [validEmail, validAge] = result.value
+	 * }
+	 * ```
+	 */
 	static async validate<const TSchemas extends readonly StandardSchemaV1[]>(
 		schemas: TSchemas,
 		data: InferInputs<TSchemas>
@@ -293,6 +499,21 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		data: unknown[]
 	): Promise<Result<InferOutputs<TSchemas>, Result.ValidationError>>
 
+	/**
+	 * Validates a single value against a StandardSchema validator.
+	 * 
+	 * @param schema - A StandardSchemaV1 validator
+	 * @param data - The value to validate
+	 * @returns A Promise resolving to Result with validated output or validation error
+	 * 
+	 * @example
+	 * ```ts
+	 * import { z } from 'zod'
+	 * 
+	 * const emailSchema = z.string().email()
+	 * const result = await Result.validate(emailSchema, userInput)
+	 * ```
+	 */
 	static async validate<TSchema extends StandardSchemaV1>(
 		schema: TSchema,
 		data: StandardSchemaV1.InferInput<TSchema>
@@ -325,11 +546,66 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return Result.ok(isArray ? validatedArgs : validatedArgs[0])
 	}
 
+	/**
+	 * Makes Result iterable for use with generator-based control flow.
+	 * Enables the `yield*` pattern for early-return on errors.
+	 * 
+	 * @yields The Result itself
+	 * @returns The success value
+	 * 
+	 * @example
+	 * ```ts
+	 * const myFunc = Result.func(function*() {
+	 *   const user = yield* getUser(id)  // Early returns if Err
+	 *   const posts = yield* getPosts(user.id)
+	 *   return { user, posts }
+	 * })
+	 * ```
+	 */
 	*[Symbol.iterator](): Generator<typeof this, TValue> {
 		yield this
 		return this.value!
 	}
 
+	// #region func
+	/**
+	 * Wraps a function to automatically handle Results and exceptions.
+	 * 
+	 * Supports:
+	 * - Regular functions (sync/async)
+	 * - Generator functions for railway-oriented programming
+	 * - Optional schema validation with StandardSchema validators
+	 * - Custom exception handling
+	 * 
+	 * When using generators, `yield*` a Result to early-return on errors.
+	 * 
+	 * @param fn - The function to wrap
+	 * @param handleException - Optional handler for thrown exceptions
+	 * @returns A wrapped function that returns Result
+	 * 
+	 * @example
+	 * ```ts
+	 * // Basic usage
+	 * const getUser = Result.func((id: string) => {
+	 *   const user = db.find(id)
+	 *   if (!user) return Result.err('NOT_FOUND', 'User not found')
+	 *   return user
+	 * })
+	 * 
+	 * // With generators for early-return
+	 * const createOrder = Result.func(function*(userId: string, items: Item[]) {
+	 *   const user = yield* getUser(userId)
+	 *   const validated = yield* validateItems(items)
+	 *   return { user, items: validated }
+	 * })
+	 * 
+	 * // With schema validation
+	 * const addUser = Result.func(
+	 *   [z.string().email(), z.number().min(18)],
+	 *   (email, age) => db.createUser({ email, age })
+	 * )
+	 * ```
+	 */
 	// #region func overloads
 
 	// * Validated Func Generators
@@ -661,6 +937,213 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			return execute(args, undefined, true, this)
 		}
 	}
+	// #endregion
+
+	// #region funcJSON
+	/**
+	 * Same as `Result.func`, but returns a JSON-serializable result instead of a Result instance.
+	 * Useful for API endpoints that need to serialize the response.
+	 * 
+	 * The returned object has `{ ok: true, value }` for success
+	 * or `{ ok: false, code, message, details?, stack? }` for errors.
+	 * 
+	 * @param fn - The function to wrap
+	 * @param handleException - Optional handler for thrown exceptions
+	 * @returns A wrapped function that returns `Result.JSON`
+	 * 
+	 * @example
+	 * ```ts
+	 * const handler = Result.funcJSON(async function * (req) {
+	 *   const user = yield* getUser(req.params.id)
+	 *   return user
+	 * })
+	 * 
+	 * // Returns: { ok: true, value: { id: '1', name: 'Alice' } }
+	 * // Or: { ok: false, code: 'NOT_FOUND', message: 'User not found' }
+	 * ```
+	 */
+	// #region funcJSON overloads
+
+	// * Validated Func Generators
+	static funcJSON<
+		const TSchema extends StandardSchemaV1[] | readonly StandardSchemaV1[],
+		const TArgs extends InferOutputs<TSchema>,
+		TGen extends Generator<unknown,unknown,unknown> | AsyncGenerator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<TSchema>>
+	) =>
+		[TGen] extends [never] ? Promise<Result.JSON> :
+		TGen extends (Generator<infer T, infer Y, any> | AsyncGenerator<infer T, infer Y, any>)
+			? Promise<Result.JSON<
+				Result.ValuableOf<Y>,
+				| Result.ErrorOf<T> 
+				| Result.ErrorOf<Y>
+				| Result.ValidationError
+				| Result.ErrorOf<TException, Result.ThrownError>
+			>>
+			: never
+	
+	static funcJSON<
+		const TSchema extends StandardSchemaV1,
+		const TArgs extends InferOutputs<[TSchema]>,
+		TGen extends Generator<unknown,unknown,unknown> | AsyncGenerator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<[TSchema]>>
+	) => 
+		[TGen] extends [never] ? Promise<Result.JSON> :
+		TGen extends (Generator<infer T, infer Y, any> | AsyncGenerator<infer T, infer Y, any>)
+			? Promise<Result.JSON<
+				Result.ValuableOf<Y>, 
+				| Result.ErrorOf<T>
+				| Result.ErrorOf<Y>
+				| Result.ValidationError
+				| Result.ErrorOf<TException, Result.ThrownError>
+			>>
+			: never
+
+	// * Validated Func
+
+	static funcJSON<
+		const TSchema extends StandardSchemaV1[] | readonly StandardSchemaV1[],
+		const TArgs extends InferOutputs<TSchema>,
+		TOut,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<TSchema>>
+	) =>
+		[TOut] extends [never] ? Promise<Result.JSON> :
+		Promise<Result.FuncOut<Awaited<TOut>> extends infer X ? Result.JSON<
+			Result.ValueOf<X>,
+			| Result.ErrorOf<X>
+			| Result.ValidationError
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never>
+
+	static funcJSON<
+		const TSchema extends StandardSchemaV1,
+		const TArgs extends InferOutputs<[TSchema]>,
+		TOut,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<[TSchema]>>
+	) =>
+		[TOut] extends [never] ? Promise<Result.JSON> :
+		Promise<Result.FuncOut<Awaited<TOut>> extends infer X ? Result.JSON<
+			Result.ValueOf<X>, 
+			| Result.ErrorOf<X>
+			| Result.ValidationError
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never>
+	
+	// * Unsafe Func Gen
+
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TGen extends Generator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) =>
+		[TGen] extends [never] ? Result.JSON :
+		TGen extends Generator<infer T, infer Y, any> ? Result.JSON<
+			Result.ValuableOf<Y>,
+			| Result.SimplifyError<
+				| Exclude<Result.ErrorOf<T>, Result.ThrownError>
+				| Result.ErrorOf<Y>
+			>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never
+	
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TGen extends AsyncGenerator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) =>
+		[TGen] extends [never] ? Promise<Result.JSON> :
+		TGen extends AsyncGenerator<infer T, infer Y, any> ? Promise<Result.JSON<
+			Result.ValuableOf<Y>,
+			| Result.ErrorOf<T>
+			| Result.ErrorOf<Y>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		>> : never
+
+	// * Unsafe Func
+
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TOut extends Promise<any>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) => 
+		[TOut] extends [never] ? Promise<Result.JSON> :
+		Promise<Result.FuncOut<Awaited<TOut>> extends infer X ? Result.JSON<
+			Result.ValueOf<X>,
+			| Result.ErrorOf<X>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never>
+
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TOut,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) => 
+		[TOut] extends [never] ? Result.JSON :
+		Result.FuncOut<TOut> extends infer X ? Result.JSON<
+			Result.ValueOf<X>,
+			| Result.ErrorOf<X>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never
+	
+	// #endregion
+
+	static funcJSON(arg0: unknown, arg1?: unknown, arg2?: unknown): (...args: any[]) => any {
+		const result = Result.func(arg0 as any, arg1 as any, arg2 as any)
+		return function(this: any, ...args: any[]) {
+			const res = result.apply(this, args) as Result.Any | Promise<Result.Any>
+			if(res instanceof Promise) {
+				return res.then(r => r.toJSON())
+			}
+			return res.toJSON()
+		} as any
+	}
+
+	// #endregion
+
 
 	/** Throws an error if `this.isErr` otherwise, it returns the `result.value` */
 	_unsafeUnwrap<TThis extends Result.Any>(this: TThis): Result.ValueOf<TThis> {
@@ -675,32 +1158,99 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this.value! as any
 	}
 
+	/**
+	 * Converts the Result to a plain JSON-serializable object.
+	 * 
+	 * @returns An object with `{ ok: true, value }` for success
+	 *          or `{ ok: false, code, message, details?, stack? }` for errors
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = Result.ok({ name: 'Alice' })
+	 * console.log(result.toJSON())
+	 * // { ok: true, value: { name: 'Alice' } }
+	 * 
+	 * const error = Result.err('NOT_FOUND', 'User not found')
+	 * console.log(error.toJSON())
+	 * // { ok: false, code: 'NOT_FOUND', message: 'User not found', stack: '...' }
+	 * ```
+	 */
 	// note: does not extend `Result.Any` due to circulary errors with fromJSON
-	toJSON<TThis>(this: TThis): (
-		| (Result.ValueOf<TThis> extends infer X ? [X] extends [never] ? never : { value: X, ok: true, code?: never, message?: never, details?: never, stack?: never } : never)
-		| (Result.ErrorOf<TThis> extends infer X ? [X] extends [never] ? never : X & { ok: false, value?: never, stack?: string} & (X extends { message: any } ? {} : { message: string }) : never)
-	) extends infer X ? [X] extends [never] ? Result.JSONShape : { [K in keyof X]: X[K] } : never
+	toJSON<TThis>(this: TThis): Result.JSON<Result.ValueOf<TThis>, Result.ErrorOf<TThis>>
 	{
 		const self = this as Result.Any
-		return {
-			ok: self instanceof Ok,
-			value: self.value,
-			code: self.code,
-			message: self.message,
-			details: self.details,
-			stack: self.stack,
-		} as any
+		const obj = { ok: self instanceof Ok } as {
+			ok: boolean
+			value?: any
+			code?: string
+			message?: string
+			details?: any
+			stack?: string
+		}
+
+		if(self instanceof Ok) {
+			obj.value = self.value
+		} else {
+			obj.code = self.code
+			obj.message = self.message
+			obj.details = self.details
+			obj.stack = self.stack
+		}
+
+		obj[Symbol.iterator] = function*() {
+			yield this
+			return this.value!
+		}
+		return obj as any
 	}
 	
+	/**
+	 * Type guard that checks if a value is a valid Result JSON shape.
+	 * 
+	 * @param value - The value to check
+	 * @returns true if the value matches the Result.JSONShape structure
+	 * 
+	 * @example
+	 * ```ts
+	 * const data = JSON.parse(response)
+	 * if (Result.isJSON(data)) {
+	 *   const result = Result.fromJSON(data)
+	 * }
+	 * ```
+	 */
 	static isJSON(value: unknown): value is Result.JSONShape {
-		return (
-			typeof value === 'object' &&
-			value !== null &&
-			'ok' in value &&
-			typeof (value as any).ok === 'boolean'
-		)
+		if(typeof value !== 'object' || value === null) return false
+		if(!('ok' in value)) return false
+		if(typeof value.ok !== 'boolean') return false
+		if(value.ok) return true
+		if(!('code' in value)) return false
+		if(typeof value.code !== 'string') return false
+		if(!('message' in value)) return false
+		if(typeof value.message !== 'string') return false
+		return true
 	}
 
+	/**
+	 * Parses a JSON value or string into a Result.
+	 * Returns `Ok<Result>` on success, allowing you to handle parse errors.
+	 * 
+	 * @param result - A JSON object, string, or Promise of either
+	 * @returns A Result containing the parsed Result, or a parse error
+	 * 
+	 * @example
+	 * ```ts
+	 * const parsed = Result.fromJSON('{ "ok": true, "value": 42 }')
+	 * if (parsed.isOk()) {
+	 *   const innerResult = parsed.value // Result<42, never>
+	 * }
+	 * 
+	 * // Handle parse errors
+	 * const invalid = Result.fromJSON('not json')
+	 * if (invalid.isErr('JSON_PARSE_ERROR')) {
+	 *   console.error('Invalid JSON')
+	 * }
+	 * ```
+	 */
 	static fromJSON<TResult>(result: TResult): 
 		TResult extends Promise<infer U> 
 			? Promise<Result<Result.JSONShapeToResult<U>, Result.FromJSONError>>
@@ -726,7 +1276,14 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			}) as any
 		}
 
-		if(!Result.isJSON(parsed)) {
+		const validResult = (
+			typeof parsed === 'object'
+			&& parsed
+			&& 'ok' in parsed
+			&& typeof parsed.ok === 'boolean'
+		)
+
+		if(!validResult) {
 			return Result.err('NOT_RESULT_JSON', 'The input was not a result JSON', {
 				input: parsed,
 				expected: Result.jsonShape
@@ -735,7 +1292,7 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 
 		const res = parsed as Result.JSONShape
 		// oxlint-disable-next-line no-extra-boolean-cast
-		if(!!res.ok) {
+		if(res.ok) {
 			const ok = Result.ok(res.value)
 			return Result.ok(ok) as any
 		}
@@ -747,11 +1304,31 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return Result.ok(err) as any
 	}
 
+	/**
+	 * Attempts to parse a JSON value into a Result, returning undefined on failure.
+	 * Unlike `fromJSON`, this doesn't wrap the result in another Result.
+	 * 
+	 * @param result - A JSON object, Result instance, or Promise of either
+	 * @returns The parsed Result or undefined if parsing fails
+	 * 
+	 * @example
+	 * ```ts
+	 * const result = Result.tryJSON(apiResponse)
+	 * if (result) {
+	 *   // Use the result directly
+	 * } else {
+	 *   // Invalid JSON shape
+	 * }
+	 * ```
+	 */
 	static tryJSON<TResult>(result: TResult): 
 		TResult extends Promise<infer U>
 			? Promise<Result.JSONShapeToResult<U> | undefined>
 			: Result.JSONShapeToResult<TResult> | undefined
 	{
+		if(result instanceof Result) {
+			return result as any
+		}
 		if (result instanceof Promise) {
 			return result.then(r => Result.tryJSON(r)) as any
 		}
@@ -759,6 +1336,106 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		const res = Result.fromJSON(result) as Result.Any
 		if (res.isErr()) return undefined as any
 		return res.value
+	}
+
+	/**
+	 * Converts a value or a promise of a value into a Result.
+	 * If the value is already a Result, it is returned as-is.
+	 *
+	 * @example
+	 * ```ts
+	 * from(123) // Result<number, never>
+	 * from(123 as const) // Result<123, never>
+	 * from(Promise.resolve(123)) // Promise<Result<number, never>>
+	 * from(Result.ok(123)) // Result<number, never>
+	 * from(moreResults) // Result<number | string, { code: 'ERROR_CODE' | 'ANOTHER_CODE' }>
+	 * from({ ok: true, value: 123 }) // Result<number, never>
+	 * from({ ok: false, code: 'SOME_ERROR', message: 'An error occurred' }) // Result<never, { code: 'SOME_ERROR' }>
+	 * from(Result.err('SOME_ERROR', 'An error occurred')) // Result<never, { code: 'SOME_ERROR' }>
+	 * ```
+	*/
+	static from<TResult>(result: TResult):
+		Result<
+			Awaited<TResult> extends { ok: true, value: infer V } ? V : Result.ValueOf<Exclude<Awaited<TResult>, { ok: false, code: string }>>, 
+			Result.SimplifyError<Result.ErrorOf<Awaited<TResult>>>
+		> extends infer X
+		? TResult extends Promise<any>
+			? Promise<X>
+			: X
+		: never
+	{
+		if(result instanceof Promise) {
+			return result.then(r => Result.from(r)) as any
+		}
+		if(result instanceof Result) {
+			return result as any
+		}
+		if(Result.isJSON(result)) {
+			return Result.tryJSON(result) as any
+		}
+		return Result.ok(result) as any
+	}
+
+	/**
+	 * Converts a value or a promise of a value into a Result.
+	 * If the value is already a Result, it is returned as-is.
+	 * 
+	 * If an error is thrown during the execution of the function, it is caught and returned as an Err.
+	 * 
+	 * Unlike `Result.func`, the callback function is run immediately, returning a Result.
+	 * 
+	 * @example
+	 * ```ts
+	 * fromSafe(() => 123) // Result<number, Result.ThrownError>
+	 * fromSafe(async () => 123) // Promise<Result<number, Result.ThrownError>>
+	 * fromSafe(() => { throw new Error('Oops') }) // Result<never, Result.ThrownError>
+	 * fromSafe(async () => { throw new Error('Oops') }) // Promise<Result<never, Result.ThrownError>>
+	 * fromSafe(() => someFunc()) // Result<string | number, Result.ThrownError | { code: 'SOME_ERROR' | 'ANOTHER_CODE' }>
+	 * ```
+	*/
+	static fromSafe<
+		TResult,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		result: () => TResult,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): 
+		[TResult] extends [never] ? Result<unknown, Result.ErrorOf<TException, Result.ThrownError>> :
+		TResult extends Promise<infer U>
+			? Promise<Result<
+				Result.ValueOf<U>,
+				Result.ErrorOf<U> | Result.ErrorOf<TException, Result.ThrownError>
+			>>
+			: Result<
+				Result.ValueOf<TResult>,
+				Result.ErrorOf<TResult> | Result.ErrorOf<TException, Result.ThrownError>
+			>
+	{
+		const toThrownError = (error: unknown) => {
+			const err = (
+				error instanceof Err 
+					? error
+					: Result.err(Result.ThrownError(error))
+			) as Result.Err<never, Result.ThrownError>
+			
+			if(handleException) {
+				const handled = handleException(err)
+				return handled instanceof Result ? handled : Result.err(handled)
+			}
+			return err
+		}
+
+		try {
+			const r = result()
+			if(r instanceof Promise) {
+				return r
+					.then(value => this.from(value))
+					.catch(toThrownError) as any
+			}
+			return this.from(r) as any
+		} catch (error) {
+			return toThrownError(error) as any
+		}
 	}
 }
 
@@ -895,6 +1572,7 @@ class Ok<
 	TError extends Result.LooseErrorShape = never
 	// @ts-expect-error Cannot extend class with a private constructor
 > extends Result<TValue, TError> {
+	ok = true as const
 	declare value: TValue
 }
 
@@ -903,6 +1581,7 @@ class Err<
 	TError extends Result.LooseErrorShape = Result.LooseErrorShape
 	// @ts-expect-error Cannot extend class with a private constructor
 > extends Result<TValue, TError> {
+	ok = false as const
 	declare code: TError['code']
 	declare message: NonNullable<TError['message']>
 	details = undefined as TError['details']
@@ -919,6 +1598,15 @@ export namespace Result {
 	export type Err<TValue = never, TError extends Result.LooseErrorShape = Result.LooseErrorShape> = _Err<TValue, TError>
 	export type AnyOk = Ok<any, never>
 	export type AnyErr = Err<never, any>
+
+	export type JSON<TValue = unknown, TError extends LooseErrorShape = ErrorShape> = { [Result.symbol]: true } & (
+		(
+			| ([TValue] extends [never] ? never : { ok: true, value: TValue })
+			| ([TError] extends [never] ? never : TError & { ok: false, stack?: string, message: string } & (TError extends { message: any } ? {} : { message: string }))
+		) extends infer X ? X & {
+			[Symbol.iterator]: () => Generator<X, TValue, unknown>
+		} : never
+	)
 
 	export const jsonShape = '{ ok: boolean, value?: unknown, code?: string, message?: string, details?: unknown, stack?: string }'
 	export interface JSONShape {
@@ -969,29 +1657,33 @@ export namespace Result {
 	 * Details will only be included if the `details` key exists
 	 * and is not `undefined`.
 	*/
-	export type SimplifyError<TErr extends ErrorShape | LooseErrorShape> = ({
-		code: TErr['code']
-	} & (
-		// Include message only if it's a specific string literal (not the general 'string' type)
-		TErr['message'] extends string
-			? string extends TErr['message']
-				? {}
-				: { message: TErr['message'] }
-			: {}
-	) & (
-		// Include details if the 'details' key exists and its type is not 'undefined'
-		'details' extends keyof TErr
-			? TErr['details'] extends undefined
-				? {}
-				: Pick<TErr, 'details'>
-			: {}
-	)) extends infer X
-		? { [K in keyof X]: X[K] } extends infer Y
-			? Y extends LooseErrorShape
-				? Y
+	export type SimplifyError<TErr extends ErrorShape | LooseErrorShape> = 
+	
+	
+	TErr extends unknown ? ([TErr] extends [never] ? never : 
+		({
+			code: TErr['code']
+		} & (
+			// Include message only if it's a specific string literal (not the general 'string' type)
+			TErr['message'] extends string
+				? string extends TErr['message']
+					? {}
+					: Pick<TErr, 'message'>
+				: {}
+		) & (
+			// Include details if the 'details' key exists and its type is not 'undefined'
+			'details' extends keyof TErr
+				? TErr['details'] extends undefined
+					? {}
+					: Pick<TErr, 'details'>
+				: {}
+		)) extends infer X
+			? { [K in keyof X]: X[K] } extends infer Y
+				? Y extends LooseErrorShape
+					? Y
+					: never
 				: never
-			: never
-		: never
+			: never) : never
 
 	/** Extract the TErr of any Result type (or LooseErrorShape) */
 	export type ErrorOf<
