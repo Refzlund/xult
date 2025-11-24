@@ -26,6 +26,9 @@ type Fallback<T, TFallback> = [T] extends [never] ? TFallback : T
 type IsAny<T> = 0 extends (1 & T) ? true : false
 
 export class Result<TValue, TError extends Result.LooseErrorShape> {
+	static symbol = Symbol('Result')
+	symbol = Result.symbol
+
 	private constructor() {}
 
 	value?: TValue
@@ -330,6 +333,7 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 		return this.value!
 	}
 
+	// #region func
 	// #region func overloads
 
 	// * Validated Func Generators
@@ -661,6 +665,191 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			return execute(args, undefined, true, this)
 		}
 	}
+	// #endregion
+
+	// #region funcJSON
+	// #region funcJSON overloads
+
+	// * Validated Func Generators
+	static funcJSON<
+		const TSchema extends StandardSchemaV1[] | readonly StandardSchemaV1[],
+		const TArgs extends InferOutputs<TSchema>,
+		TGen extends Generator<unknown,unknown,unknown> | AsyncGenerator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<TSchema>>
+	) =>
+		[TGen] extends [never] ? Promise<Result.JSON> :
+		TGen extends (Generator<infer T, infer Y, any> | AsyncGenerator<infer T, infer Y, any>)
+			? Promise<Result.JSON<
+				Result.ValuableOf<Y>,
+				| Result.ErrorOf<T> 
+				| Result.ErrorOf<Y>
+				| Result.ValidationError
+				| Result.ErrorOf<TException, Result.ThrownError>
+			>>
+			: never
+	
+	static funcJSON<
+		const TSchema extends StandardSchemaV1,
+		const TArgs extends InferOutputs<[TSchema]>,
+		TGen extends Generator<unknown,unknown,unknown> | AsyncGenerator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<[TSchema]>>
+	) => 
+		[TGen] extends [never] ? Promise<Result.JSON> :
+		TGen extends (Generator<infer T, infer Y, any> | AsyncGenerator<infer T, infer Y, any>)
+			? Promise<Result.JSON<
+				Result.ValuableOf<Y>, 
+				| Result.ErrorOf<T>
+				| Result.ErrorOf<Y>
+				| Result.ValidationError
+				| Result.ErrorOf<TException, Result.ThrownError>
+			>>
+			: never
+
+	// * Validated Func
+
+	static funcJSON<
+		const TSchema extends StandardSchemaV1[] | readonly StandardSchemaV1[],
+		const TArgs extends InferOutputs<TSchema>,
+		TOut,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<TSchema>>
+	) =>
+		[TOut] extends [never] ? Promise<Result.JSON> :
+		Promise<Result.FuncOut<Awaited<TOut>> extends infer X ? Result.JSON<
+			Result.ValueOf<X>,
+			| Result.ErrorOf<X>
+			| Result.ValidationError
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never>
+
+	static funcJSON<
+		const TSchema extends StandardSchemaV1,
+		const TArgs extends InferOutputs<[TSchema]>,
+		TOut,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		schema: TSchema,
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: Assign<TArgs, InferInputs<[TSchema]>>
+	) =>
+		[TOut] extends [never] ? Promise<Result.JSON> :
+		Promise<Result.FuncOut<Awaited<TOut>> extends infer X ? Result.JSON<
+			Result.ValueOf<X>, 
+			| Result.ErrorOf<X>
+			| Result.ValidationError
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never>
+	
+	// * Unsafe Func Gen
+
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TGen extends Generator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) =>
+		[TGen] extends [never] ? Result.JSON :
+		TGen extends Generator<infer T, infer Y, any> ? Result.JSON<
+			Result.ValuableOf<Y>,
+			| Result.SimplifyError<
+				| Exclude<Result.ErrorOf<T>, Result.ThrownError>
+				| Result.ErrorOf<Y>
+			>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never
+	
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TGen extends AsyncGenerator<unknown,unknown,unknown>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TGen,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) =>
+		[TGen] extends [never] ? Promise<Result.JSON> :
+		TGen extends AsyncGenerator<infer T, infer Y, any> ? Promise<Result.JSON<
+			Result.ValuableOf<Y>,
+			| Result.ErrorOf<T>
+			| Result.ErrorOf<Y>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		>> : never
+
+	// * Unsafe Func
+
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TOut extends Promise<any>,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) => 
+		[TOut] extends [never] ? Promise<Result.JSON> :
+		Promise<Result.FuncOut<Awaited<TOut>> extends infer X ? Result.JSON<
+			Result.ValueOf<X>,
+			| Result.ErrorOf<X>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never>
+
+	static funcJSON<
+		const TArgs extends Array<any>,
+		TOut,
+		TException extends Result.Err | Result.ErrorShape = never
+	>(
+		fn: (...args: TArgs) => TOut,
+		handleException?: (error: Result.Err<never, Result.ThrownError>) => TException
+	): (
+		...args: TArgs
+	) => 
+		[TOut] extends [never] ? Result.JSON :
+		Result.FuncOut<TOut> extends infer X ? Result.JSON<
+			Result.ValueOf<X>,
+			| Result.ErrorOf<X>
+			| Result.ErrorOf<TException, Result.ThrownError>
+		> : never
+	
+	// #endregion
+
+	static funcJSON(arg0: unknown, arg1?: unknown, arg2?: unknown): (...args: any[]) => any {
+		const result = Result.func(arg0 as any, arg1 as any, arg2 as any)
+		return function(this: any, ...args: any[]) {
+			const res = result.apply(this, args) as Result.Any | Promise<Result.Any>
+			if(res instanceof Promise) {
+				return res.then(r => r.toJSON())
+			}
+			return res.toJSON()
+		} as any
+	}
+
+	// #endregion
+
 
 	/** Throws an error if `this.isErr` otherwise, it returns the `result.value` */
 	_unsafeUnwrap<TThis extends Result.Any>(this: TThis): Result.ValueOf<TThis> {
@@ -676,10 +865,7 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	}
 
 	// note: does not extend `Result.Any` due to circulary errors with fromJSON
-	toJSON<TThis>(this: TThis): (
-		| (Result.ValueOf<TThis> extends infer X ? [X] extends [never] ? never : { value: X, ok: true } : never)
-		| (Result.ErrorOf<TThis> extends infer X ? [X] extends [never] ? never : X & { ok: false, stack?: string} & (X extends { message: any } ? {} : { message: string }) : never)
-	) extends infer X ? [X] extends [never] ? Result.JSONShape : { [K in keyof X]: X[K] } : never
+	toJSON<TThis>(this: TThis): Result.JSON<Result.ValueOf<TThis>, Result.ErrorOf<TThis>>
 	{
 		const self = this as Result.Any
 		const obj = { ok: self instanceof Ok } as {
@@ -698,6 +884,11 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			obj.message = self.message
 			obj.details = self.details
 			obj.stack = self.stack
+		}
+
+		obj[Symbol.iterator] = function*() {
+			yield this
+			return this.value!
 		}
 		return obj as any
 	}
@@ -1045,6 +1236,15 @@ export namespace Result {
 	export type AnyOk = Ok<any, never>
 	export type AnyErr = Err<never, any>
 
+	export type JSON<TValue = unknown, TError extends LooseErrorShape = ErrorShape> = { [Result.symbol]: true } & (
+		(
+			| ([TValue] extends [never] ? never : { ok: true, value: TValue })
+			| ([TError] extends [never] ? never : TError & { ok: false, stack?: string, message: string } & (TError extends { message: any } ? {} : { message: string }))
+		) extends infer X ? X & {
+			[Symbol.iterator]: () => Generator<X, TValue, unknown>
+		} : never
+	)
+
 	export const jsonShape = '{ ok: boolean, value?: unknown, code?: string, message?: string, details?: unknown, stack?: string }'
 	export interface JSONShape {
 		ok: boolean
@@ -1094,29 +1294,33 @@ export namespace Result {
 	 * Details will only be included if the `details` key exists
 	 * and is not `undefined`.
 	*/
-	export type SimplifyError<TErr extends ErrorShape | LooseErrorShape> = [TErr] extends [never] ? never : ({
-		code: TErr['code']
-	} & (
-		// Include message only if it's a specific string literal (not the general 'string' type)
-		TErr['message'] extends string
-			? string extends TErr['message']
-				? {}
-				: { message: TErr['message'] }
-			: {}
-	) & (
-		// Include details if the 'details' key exists and its type is not 'undefined'
-		'details' extends keyof TErr
-			? TErr['details'] extends undefined
-				? {}
-				: Pick<TErr, 'details'>
-			: {}
-	)) extends infer X
-		? { [K in keyof X]: X[K] } extends infer Y
-			? Y extends LooseErrorShape
-				? Y
+	export type SimplifyError<TErr extends ErrorShape | LooseErrorShape> = 
+	
+	
+	TErr extends unknown ? ([TErr] extends [never] ? never : 
+		({
+			code: TErr['code']
+		} & (
+			// Include message only if it's a specific string literal (not the general 'string' type)
+			TErr['message'] extends string
+				? string extends TErr['message']
+					? {}
+					: Pick<TErr, 'message'>
+				: {}
+		) & (
+			// Include details if the 'details' key exists and its type is not 'undefined'
+			'details' extends keyof TErr
+				? TErr['details'] extends undefined
+					? {}
+					: Pick<TErr, 'details'>
+				: {}
+		)) extends infer X
+			? { [K in keyof X]: X[K] } extends infer Y
+				? Y extends LooseErrorShape
+					? Y
+					: never
 				: never
-			: never
-		: never
+			: never) : never
 
 	/** Extract the TErr of any Result type (or LooseErrorShape) */
 	export type ErrorOf<

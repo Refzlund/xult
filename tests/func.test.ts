@@ -336,7 +336,7 @@ describe('[type] Result.func', () => {
 		const example = func([z.coerce.date(), z.number()], async (date, num) => {
 			if(num === 1) return err('BAD', ':(')
 			if(num === 2) return err('BAD_TWO', ':(')
-			if(num === 3) return err('EXAMPLE_ERR', 'C:') as Result<never, { code: 'EXAMPLE_ERR', message: 'C:'}>
+			if(num === 3) return err('EXAMPLE_ERR', 'C:') as Result.Err<never, { code: 'EXAMPLE_ERR', message: 'C:'}>
 			if(num === 4) return { normal: true }
 			return ok({ date })
 		})

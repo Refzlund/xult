@@ -7,7 +7,7 @@ describe('New Result Features', () => {
 			const r = ok({ foo: 'bar' })
 			const str = r.toString()
 			expect(str).toBe(JSON.stringify(r.toJSON()))
-			expect(JSON.parse(str)).toEqual(r.toJSON())
+			expect(JSON.parse(str)).toEqual(JSON.parse(JSON.stringify(r.toJSON())))
 		})
 	})
 

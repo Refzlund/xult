@@ -164,7 +164,7 @@ describe('Serialization (toJSON / fromJSON)', () => {
 			const moreResults = Math.random() > 0.5 ? (Math.random() > 0.5 ? r1 : r2) : (Math.random() > 0.5 ? r3 : r4)
 			const r = Result.from(moreResults)
 			
-			expectTypeOf(r).toEqualTypeOf<Result<number | string, { code: 'ERROR_CODE' | 'ANOTHER_CODE' }>>()
+			expectTypeOf(r).toEqualTypeOf<Result<number | string, { code: 'ERROR_CODE' } | { code: 'ANOTHER_CODE' }>>()
 			expect(r).toBeInstanceOf(Result)
 			// Value could be number or string, error could be ERROR_CODE or ANOTHER_CODE
 			if (r.isOk()) {
