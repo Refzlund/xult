@@ -296,10 +296,11 @@ describe('Browser DevTools Formatter', () => {
 		test('formats Err result with function details', () => {
 			const globalWindow = window as any
 			const formatter = globalWindow.devtoolsFormatters[0]
-			
+
+			// @ts-expect-error - testing function as details
 			const result = err('ERROR_CODE', 'Error message', function detailFunc() {})
 			const header = formatter.header(result)
-			
+
 			expect(header).not.toBeNull()
 			expect(header[0]).toBe('div')
 		})
@@ -473,19 +474,15 @@ describe('Browser DevTools Formatter', () => {
 		test('re-importing module replaces existing formatter', async () => {
 			const globalWindow = window as any
 			const formatterFlag = Symbol.for('xult.result.devtoolsFormatter')
-			
-			const initialFormatter = globalWindow[formatterFlag]
-			const initialCount = globalWindow.devtoolsFormatters.length
-			
+
 			// Clear module cache and re-import
-			// @ts-expect-error - accessing Bun internals
 			const cache = require.cache || {}
 			for (const key of Object.keys(cache)) {
 				if (key.includes('result')) {
 					delete cache[key]
 				}
 			}
-			
+
 			// The formatter should still work after potential re-registration
 			const result = ok('after re-import')
 			const header = globalWindow[formatterFlag].header(result)
