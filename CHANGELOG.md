@@ -1,5 +1,17 @@
 # xult
 
+## 1.3.0
+
+### Minor Changes
+
+- feat: added `funcJSON` which returns `Result.JSON` instead of a `Result` (for environments such as Cloudflare Workers) See [this Workers SDK issue #11388](https://github.com/cloudflare/workers-sdk/issues/11388) ([#14](https://github.com/Refzlund/xult/pull/14))
+
+- feat: added `Result.from(...)` which converts `Result.JSON` -> `Result` or non-results to a Result.Ok ([#14](https://github.com/Refzlund/xult/pull/14))
+
+### Patch Changes
+
+- fix: preserve `this` context for `func` functions ([#12](https://github.com/Refzlund/xult/pull/12))
+
 ## 1.2.0
 
 ### Minor Changes
