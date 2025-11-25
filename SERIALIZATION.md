@@ -15,7 +15,7 @@ import Result from 'xult'
 
 export const transport: Transport = {
 	Result: {
-		encode: (value) => value instanceof Result && Result.toJSON(),
+		encode: (value) => value instanceof Result && Result.toJSON(false), // do not include [Symbol.iterator]
 		decode: (json) => Result.maybe(json)!
 	}
 }
