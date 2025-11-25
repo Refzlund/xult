@@ -1,5 +1,11 @@
 # xult
 
+## 1.4.0
+
+### Minor Changes
+
+- feat(toJSON): add optional iterator parameter to control Symbol.iterator inclusion ([#15](https://github.com/Refzlund/xult/pull/15))
+
 ## 1.3.0
 
 ### Minor Changes
