@@ -1176,7 +1176,7 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 	 * ```
 	 */
 	// note: does not extend `Result.Any` due to circulary errors with fromJSON
-	toJSON<TThis>(this: TThis): Result.JSON<Result.ValueOf<TThis>, Result.ErrorOf<TThis>>
+	toJSON<TThis, TIterator extends boolean = true>(this: TThis, iterator?: TIterator): TIterator extends false ? Result.PlainJSON<Result.ValueOf<TThis>, Result.ErrorOf<TThis>> : Result.JSON<Result.ValueOf<TThis>, Result.ErrorOf<TThis>>
 	{
 		const self = this as Result.Any
 		const obj = { ok: self instanceof Ok } as {
@@ -1196,6 +1196,8 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 			obj.details = self.details
 			obj.stack = self.stack
 		}
+
+		if(iterator === false) return obj as any
 
 		obj[Symbol.iterator] = function*() {
 			yield this
@@ -1599,11 +1601,12 @@ export namespace Result {
 	export type AnyOk = Ok<any, never>
 	export type AnyErr = Err<never, any>
 
+	export type PlainJSON<TValue = unknown, TError extends LooseErrorShape = ErrorShape> = 
+		| ([TValue] extends [never] ? never : { ok: true, value: TValue })
+		| ([TError] extends [never] ? never : { ok: false, code: TError['code'], message: string, stack?: string } & ('details' extends keyof TError ? TError['details'] extends undefined ? {} : { details: TError['details'] } : {}))
+
 	export type JSON<TValue = unknown, TError extends LooseErrorShape = ErrorShape> = { [Result.symbol]: true } & (
-		(
-			| ([TValue] extends [never] ? never : { ok: true, value: TValue })
-			| ([TError] extends [never] ? never : TError & { ok: false, stack?: string, message: string } & (TError extends { message: any } ? {} : { message: string }))
-		) extends infer X ? X & {
+		PlainJSON<TValue, TError> extends infer X ? X & {
 			[Symbol.iterator]: () => Generator<X, TValue, unknown>
 		} : never
 	)

@@ -389,3 +389,103 @@ describe('[type] Serialization type inference', () => {
 		}
 	})
 })
+
+describe('toJSON - iterator parameter', () => {
+	test('toJSON() returns Result.JSON with iterator by default', () => {
+		const r = ok({ name: 'Alice' })
+		const json = r.toJSON()
+
+		expect(json.ok).toBe(true)
+		expect(json.value).toEqual({ name: 'Alice' })
+		expect(typeof json[Symbol.iterator]).toBe('function')
+
+		// type tests
+		expectTypeOf(json).toEqualTypeOf<Result.JSON<{ name: string }, never>>()
+		expectTypeOf(json).toMatchTypeOf<{ ok: true, value: { name: string } }>()
+	})
+
+	test('toJSON(true) returns Result.JSON with iterator', () => {
+		const r = ok(42)
+		const json = r.toJSON(true)
+
+		expect(json.ok).toBe(true)
+		expect(json.value).toBe(42)
+		expect(typeof json[Symbol.iterator]).toBe('function')
+
+		expect(Object.getOwnPropertySymbols(json)).toHaveLength(1)
+
+		// type tests
+		expectTypeOf(json).toEqualTypeOf<Result.JSON<number, never>>()
+	})
+
+	test('toJSON(false) returns Result.PlainJSON without iterator', () => {
+		const r = ok({ id: 123 })
+		const json = r.toJSON(false)
+
+		expect(json.ok).toBe(true)
+		expect(json.value).toEqual({ id: 123 })
+		expect((json as any)[Symbol.iterator]).toBeUndefined()
+
+		expect(Object.getOwnPropertySymbols(json)).toHaveLength(0)
+
+		// type tests
+		expectTypeOf(json).toEqualTypeOf<Result.PlainJSON<{ id: number }, never>>()
+		expectTypeOf(json).toMatchTypeOf<{ ok: true, value: { id: number } }>()
+	})
+
+	test('toJSON(false) on Err returns plain error object', () => {
+		const r = err('NOT_FOUND', 'User not found', { userId: 'abc' })
+		const json = r.toJSON(false)
+
+		expect(json.ok).toBe(false)
+		expect(json.code).toBe('NOT_FOUND')
+		expect(json.message).toBe('User not found')
+		expect(json.details).toEqual({ userId: 'abc' })
+		expect(json.stack).toBeString()
+		expect((json as any)[Symbol.iterator]).toBeUndefined()
+
+		// type tests
+		expectTypeOf(json).toEqualTypeOf<Result.PlainJSON<never, { code: 'NOT_FOUND', details: { userId: string } }>>()
+	})
+
+	test('PlainJSON type is a clean union type', () => {
+		const okResult = ok('success')
+		const errResult = err('FAIL', 'failed')
+
+		const okJson = okResult.toJSON(false)
+		const errJson = errResult.toJSON(false)
+
+		// Ok case: should be exactly { ok: true, value: string }
+		expectTypeOf(okJson).toEqualTypeOf<{ ok: true, value: string }>()
+
+		// Err case: should be { ok: false, code: 'FAIL', message: string, stack?: string }
+		expectTypeOf(errJson).toMatchTypeOf<{ ok: false, code: 'FAIL', message: string }>()
+	})
+
+	test('JSON type includes Symbol.iterator and Result.symbol', () => {
+		const r = ok(123)
+		const json = r.toJSON(true)
+
+		// Should have Symbol.iterator
+		expectTypeOf(json[Symbol.iterator]).toBeFunction()
+		expectTypeOf(json[Symbol.iterator]).returns.toMatchTypeOf<Generator<any, number, unknown>>()
+
+		// Should have Result.symbol key
+		expectTypeOf(json[Result.symbol]).toEqualTypeOf<true>()
+	})
+
+	test('iterator on Result.JSON works correctly', () => {
+		const r = ok({ count: 5 })
+		const json = r.toJSON()
+
+		const iterator = json[Symbol.iterator]()
+		const first = iterator.next()
+
+		expect(first.done).toBe(false)
+		expect(first.value).toBe(json)
+
+		const second = iterator.next()
+		expect(second.done).toBe(true)
+		expect(second.value).toEqual({ count: 5 })
+	})
+})
