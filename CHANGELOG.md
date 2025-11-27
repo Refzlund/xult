@@ -1,5 +1,13 @@
 # xult
 
+## 1.4.1
+
+### Patch Changes
+
+- test(func): add comprehensive Promise handling tests for async generators ([#18](https://github.com/Refzlund/xult/pull/18))
+
+- fix(func): await Promises returned from async generators ([#18](https://github.com/Refzlund/xult/pull/18))
+
 ## 1.4.0
 
 ### Minor Changes
