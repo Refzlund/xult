@@ -463,9 +463,6 @@ For more on serialization, see [SERIALIZATION.md](./SERIALIZATION.md).
   Result.from({ ok: false, code: 'ERR', message: 'fail' }) // Result<never, { code: 'ERR' }>
   ```
 
-- **`Result.maybe(value)`**  
-  ...
-
 <br>
 <br>
 

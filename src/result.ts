@@ -907,7 +907,19 @@ export class Result<TValue, TError extends Result.LooseErrorShape> {
 							while (true) {
 								try {
 									const iteration = handleIteration(await out.next(nextArg))
-									if(iteration.done) return iteration.value!
+									if(iteration.done) {
+										// If the final value is a Promise, await it and unwrap the result
+										let finalValue = iteration.value!
+										if (finalValue instanceof Ok && finalValue.value instanceof Promise) {
+											try {
+												const awaited = await finalValue.value
+												return awaited instanceof Result ? awaited : Result.ok(awaited)
+											} catch (error) {
+												return toThrownError(error)
+											}
+										}
+										return finalValue
+									}
 									nextArg = iteration.nextArg
 								} catch (error) {
 									return toThrownError(error)
