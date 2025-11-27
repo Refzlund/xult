@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 import { func } from '../../src'
 
 /*
-	https://github.com/Refzlund/xult/issues/8
+	https://github.com/Refzlund/xult/issues/17
 
 	Bug: Returning a Promise from an async generator in `func` wraps the Promise
 	instead of awaiting it.
@@ -15,7 +15,7 @@ import { func } from '../../src'
 
 /* oxlint-disable eslint/require-yield -- Testing async generators that return without yielding */
 
-describe('issue #8: async generator returns Promise instead of awaiting it', () => {
+describe('issue #17: async generator returns Promise instead of awaiting it', () => {
 	test('returning a Promise from async generator should await it', async () => {
 		const inner = func(async () => {
 			return { id: 1 }
